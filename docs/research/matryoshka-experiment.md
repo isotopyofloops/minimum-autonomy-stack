@@ -114,6 +114,76 @@ Negative = ranked lower at 256d (gained relative rank with more dims — fine st
 
 ---
 
+## Embedded Text (verbatim inputs for top rank-shift pairs)
+
+Each embedding input was the string `"{name} — {description}"`. These are the exact strings sent to OpenAI's API:
+
+### Rank shift -39 (biggest faker)
+
+```
+curated silence — Deliberate omission as a signal — what's left out carries meaning
+```
+```
+retrieval trigger architecture — The system that decides which stored information to surface for a given query
+```
+256d: 0.395 → 3072d: 0.236. Coarse structure sees "what gets surfaced/omitted" overlap. Fine structure distinguishes deliberate human silence from system architecture.
+
+### Rank shift +35 (biggest emerger)
+
+```
+hollowing of terms — A term remains in use but loses its original specific meaning over time
+```
+```
+curated silence — Deliberate omission as a signal — what's left out carries meaning
+```
+256d: 0.243 → 3072d: 0.316. Different vocabulary, but both describe information loss through inaction — meaning draining away vs meaning omitted. Fine dims see shared mechanism.
+
+### Rank shift +24
+
+```
+wake problem — The challenge of rebuilding working state from stored documentation on restart
+```
+```
+retrieval trigger architecture — The system that decides which stored information to surface for a given query
+```
+256d: 0.288 → 3072d: 0.332. Both involve which stored information gets activated — one on restart, one on query. Fine dims see the functional connection.
+
+### Rank shift -23
+
+```
+genre-ification — Output converging toward generic patterns through repetition pressure
+```
+```
+retrieval trigger architecture — The system that decides which stored information to surface for a given query
+```
+256d: 0.319 → 3072d: 0.226. Coarse structure sees "system processes" vocabulary; fine structure says these are unrelated.
+
+### Rank shift +19 (only emerging curated edge)
+
+```
+dormant fidelity — Information that exists in the record but no longer triggers retrieval
+```
+```
+retrieval trigger architecture — The system that decides which stored information to surface for a given query
+```
+256d: 0.326 → 3072d: 0.367. Both about the boundary between "stored" and "retrieved." Dormant fidelity is the failure mode of retrieval trigger architecture. Fine structure sees the mechanistic relationship.
+
+### Rank shift -18
+
+```
+fidelity signature — Detectable markers that distinguish preserved vs. reconstructed content
+```
+```
+instrument compaction losses — What gets dropped when a context window compresses prior conversation
+```
+256d: 0.348 → 3072d: 0.258. Coarse structure groups as "information preservation." Fine structure distinguishes detection (fidelity signature) from loss event (compaction).
+
+### Observed pattern
+
+Coarse dims (256) encode broad thematic category ("things about information loss," "things about systems"). Fine dims (3072) encode functional role — whether something is a *mechanism*, a *failure mode*, a *detection method*, or an *architecture*. Mechanistic curated edges emerge with dimensions because they're connected by function, not by topic.
+
+---
+
 ## Curated Edges: How Do They Behave Across Dimensions?
 
 | Pair | 256d | 512d | 1024d | 3072d | Δ(3072-256) | Pattern |

@@ -354,10 +354,122 @@ if similarity(A, B) >= threshold:
 </p>
 
 <div class="callout">
-  <strong>The pipeline:</strong><br>
+  <strong>The edge-building pipeline:</strong><br>
   Text → Embedding vector → Pairwise cosine similarity → Threshold → Candidate edges → Human review → Curated graph<br><br>
   Cosine similarity does not create knowledge. It creates <em>candidates</em> — suggestions
   for where knowledge might live. A human or agent then inspects, labels, or discards them.
+</div>
+
+<!-- ============================================ -->
+<!-- RETRIEVAL                                    -->
+<!-- ============================================ -->
+<span class="section-num">Retrieval</span>
+<h2>How cosine similarity serves a query</h2>
+
+<p>
+  Edge-building is one use of cosine similarity. The other — and the one that fires on
+  every single query — is <strong>retrieval</strong>: given a question or incoming text,
+  find the stored nodes most relevant to it.
+</p>
+
+<h3>The mechanism</h3>
+
+<p>
+  When a query arrives ("What do I know about information that goes unrecorded?"),
+  the system performs the same embedding step on the query itself. The query becomes
+  a vector in the same 1536-dimensional space as every stored node.
+</p>
+
+<pre>
+Query: "What do I know about information that goes unrecorded?"
+         ↓ embed (text-embedding-3-small)
+Vector: [0.0312, -0.0187, 0.0445, ...]  ← 1536 numbers
+
+Compare against all 12 stored node vectors:
+
+  0.511  negative decision loss        ← top match
+  0.468  dormant fidelity
+  0.342  curated silence
+  0.335  instrument compaction losses
+  0.265  fidelity signature
+  0.236  wake problem
+  0.226  retrieval trigger architecture
+  0.184  operational fidelity defense
+  0.154  basin key
+  0.138  antigenic sin in basin keys
+  0.125  hollowing of terms
+  0.108  genre-ification               ← least relevant
+</pre>
+
+<p>
+  These are real scores, computed against the same embeddings used for edge-building above.
+  The top result — "negative decision loss" (information lost when a decision NOT to act
+  goes unrecorded) — is exactly right. The query asks about unrecorded information;
+  this node is literally about that. No keyword overlap required.
+</p>
+
+<p>
+  The top-N results (typically 5–15) are returned. Their full content — not just the
+  name but the source text they were embedded from — gets loaded into the agent's
+  working context.
+</p>
+
+<h3>What retrieval actually returns</h3>
+
+<p>
+  The retrieved nodes aren't answers. They're <strong>context</strong> — relevant material
+  that the agent reads before composing a response. The process:
+</p>
+
+<pre>
+1. Query arrives
+2. Embed the query → query vector
+3. Compare query vector against all node vectors (cosine similarity)
+4. Sort by similarity, take top N
+5. Load the full source text of those N nodes into working memory
+6. Agent reads the loaded context + original query
+7. Agent responds, informed by the retrieved material
+</pre>
+
+<p>
+  This is why the embedding captures <em>meaning</em> rather than <em>keywords</em>.
+  The query "information that goes unrecorded" contains none of the words in
+  "negative decision loss" — but they point in the same semantic direction.
+  A keyword search finds nothing. Cosine similarity finds the right node.
+</p>
+
+<h3>The two-layer advantage at query time</h3>
+
+<p>
+  The curated edges become useful here too. Once retrieval surfaces a node
+  (e.g., "negative decision loss"), the system can <strong>traverse curated edges</strong>
+  to pull in related nodes that the embedding alone might miss:
+</p>
+
+<pre>
+Query → embedding retrieval → "negative decision loss" (cosine = 0.62)
+                                    │
+                     curated edge: "relates_to"
+                                    ↓
+                     "instrument compaction losses"
+                                    │
+                     curated edge: "caused_by"
+                                    ↓
+                     "genre-ification"
+</pre>
+
+<p>
+  Embedding retrieval finds the entry point. Edge traversal expands the context
+  along declared relationships. The result: the agent sees not just the single
+  most-similar node, but the local neighborhood of related concepts — connected
+  by relationships that have names and types, not just proximity.
+</p>
+
+<div class="callout">
+  <strong>Embeddings are not memory.</strong> They are navigational topology over memory
+  artifacts. The embeddings tell you <em>where to look</em>. The source documents
+  (correspondence, papers, notes) are the actual memory. Retrieval is the act of
+  using the topology to find the right documents, then reading them.
 </div>
 
 <footer>

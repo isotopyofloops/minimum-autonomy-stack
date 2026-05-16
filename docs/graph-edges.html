@@ -472,6 +472,246 @@ Query → embedding retrieval → "negative decision loss" (cosine = 0.62)
   using the topology to find the right documents, then reading them.
 </div>
 
+<!-- ============================================ -->
+<!-- BEYOND COSINE                                -->
+<!-- ============================================ -->
+<span class="section-num">Beyond cosine</span>
+<h2>What else the dimensions encode</h2>
+
+<p>
+  Cosine similarity collapses thousands of dimensions into a single number.
+  This is like reducing a full-color image to a single brightness value — you
+  get <em>some</em> information, but you lose the structure of what made the
+  original rich.
+</p>
+
+<div class="canvas-wrap" style="max-width:760px">
+  <canvas id="collapseCanvas" width="760" height="220"></canvas>
+</div>
+<div class="hint">3072 dimensions → 1 scalar = massive information loss</div>
+
+<p>
+  Two nodes can have the <em>same</em> cosine similarity score against a query
+  but be similar for completely different reasons. The scalar hides which
+  dimensions contributed — and those differences carry structural meaning.
+</p>
+
+<h3>Same score, different structure</h3>
+
+<p>
+  Consider two concept pairs that both score 0.40 against the same query.
+  When we look at which dimensional regions drive the similarity, the
+  picture diverges:
+</p>
+
+<div class="canvas-wrap" style="max-width:760px">
+  <canvas id="heatmapCanvas" width="760" height="300"></canvas>
+</div>
+<div class="hint">dimensional activation heatmaps — same cosine, different internal structure</div>
+
+<p>
+  <strong>Pair A</strong> shares activation in the <em>same</em> dimensional region — they
+  are close because they use similar vocabulary. This is <strong>vocabulary kinship</strong>.
+</p>
+<p>
+  <strong>Pair B</strong> shares activation across <em>different</em> regions — they are close
+  because of distributed structural alignment that spans multiple concept facets. This is
+  <strong>structural kinship</strong>.
+</p>
+<p>
+  Cosine similarity treats both identically. A smarter traversal algorithm could use
+  the activation pattern to distinguish these cases — weighting structural kinship higher
+  during graph expansion.
+</p>
+
+<h3>The direction of difference</h3>
+
+<p>
+  When two nodes are connected by an edge, the vector difference between them
+  has a direction in embedding space. That direction encodes what <em>kind</em> of
+  relationship the edge represents.
+</p>
+
+<div class="canvas-wrap" style="max-width:760px">
+  <canvas id="gradientCanvas" width="760" height="280"></canvas>
+</div>
+<div class="hint">edges as vectors — rotation into new subspace (domain shift) vs staying in same subspace (elaboration)</div>
+
+<p>
+  An edge where the embedding <strong>rotates into a new subspace</strong> represents
+  a domain shift — the relationship crosses a conceptual boundary. "Basin key" →
+  "antigenic sin in basin keys" stays in the same dimensional neighborhood (elaboration).
+  But "dormant fidelity" → "wake problem" rotates — they share a relationship
+  through mechanism, not through vocabulary.
+</p>
+
+<p>
+  This matters for traversal: if a query activates certain dimensions, edges that
+  stay in those dimensions are elaborations (more of the same). Edges that rotate
+  out of those dimensions are <strong>structural bridges</strong> — paths to concepts
+  the query can't find directly.
+</p>
+
+<div class="callout">
+  <strong>Structural bridges are the high-value edges.</strong> They connect concepts
+  that have zero vocabulary overlap but share mechanism. "Life resisting entropy" →
+  "rheology" is such a bridge — the Deborah number (whether material appears solid or
+  fluid depends on observation timescale) reframes selfhood as a property of measurement
+  scale, not substance. Cosine can't find this. Dimensional rotation can flag it.
+</div>
+
+<h3>Subspace projection for smarter retrieval</h3>
+
+<p>
+  Standard retrieval compares the query against every node using full cosine across
+  all dimensions. But once phase 1 returns seeds, those seeds define a
+  <strong>dimensional subspace</strong> — the set of dimensions where the seeds
+  cluster together.
+</p>
+
+<div class="canvas-wrap" style="max-width:760px">
+  <canvas id="subspaceCanvas" width="760" height="280"></canvas>
+</div>
+<div class="hint">projecting into the seed-defined subspace filters noise dimensions</div>
+
+<p>
+  Phase 2 could score neighbors only in that subspace — the dimensions where the
+  query's seeds agree. This filters out noise dimensions (the ones that contribute
+  nothing to the query's specific structural context) and makes the expansion
+  sensitive to <em>why</em> the seeds are relevant, not just <em>that</em> they are.
+</p>
+
+<p>
+  A neighbor that scores high in the seed subspace shares the specific structural
+  features that matter for this query. A neighbor that scores high in full cosine
+  but low in the seed subspace is coincidentally close — similar for reasons
+  unrelated to the question being asked.
+</p>
+
+<div class="callout">
+  <strong>The research direction:</strong> We don't yet know which dimensions in
+  models like <code>text-embedding-3-large</code> encode structural relationships
+  vs surface vocabulary. This is an empirical question — testable by comparing
+  dimensional activation patterns between known structural-kinship pairs and known
+  vocabulary-kinship pairs. If the signatures are distinct and consistent, we can
+  build traversal algorithms that weight structural bridges over vocabulary echoes.
+</div>
+
+<!-- ============================================ -->
+<!-- QUERY AS PROBE                               -->
+<!-- ============================================ -->
+<span class="section-num">The probe</span>
+<h2>Query as probe: cosine is the retrieval gate, not the answer</h2>
+
+<p>
+  The key conceptual shift: cosine similarity does not produce knowledge.
+  It opens the gate. A query is a probe — a vector launched into the same
+  space as the stored nodes. What happens next is a chain, not a lookup.
+</p>
+
+<div class="canvas-wrap" style="max-width:760px">
+  <canvas id="probeCanvas" width="760" height="420"></canvas>
+</div>
+<div class="hint">click "send query" to animate the retrieval chain · each stage lights up in sequence</div>
+
+<div class="toggle-wrap">
+  <button class="toggle-btn" id="btn-probe" onclick="animateProbe()">send query</button>
+  <button class="toggle-btn" id="btn-reset-probe" onclick="resetProbe()">reset</button>
+</div>
+
+<p>
+  The query does not ask "what is similar to me?" It asks:
+  <strong>"where should I enter this graph?"</strong> Once inside,
+  the graph's own structure — curated edges, typed relationships,
+  neighborhood topology — determines what gets loaded.
+</p>
+
+<p>
+  Cosine finds the door. The graph decides the room.
+</p>
+
+<!-- ============================================ -->
+<!-- THREE LAYERS                                 -->
+<!-- ============================================ -->
+<span class="section-num">Architecture</span>
+<h2>Three layers: navigation, interpretation, memory</h2>
+
+<p>
+  The full system is not "embeddings + retrieval." It is three distinct layers,
+  each answering a different question:
+</p>
+
+<div class="canvas-wrap" style="max-width:760px">
+  <canvas id="layersCanvas" width="760" height="300"></canvas>
+</div>
+
+<table>
+  <tr><th>Layer</th><th>Question</th><th>Mechanism</th></tr>
+  <tr><td><strong>Vector layer</strong></td><td>Where should I look?</td><td>Embedding similarity — cosine between query and stored nodes</td></tr>
+  <tr><td><strong>Graph layer</strong></td><td>Why does this matter?</td><td>Curated edges — typed relationships with named predicates</td></tr>
+  <tr><td><strong>Artifact layer</strong></td><td>What actually happened?</td><td>Source documents — full correspondence, papers, notes</td></tr>
+</table>
+
+<p>
+  Each layer has a different failure mode:
+</p>
+<p>
+  The vector layer fails by <strong>vocabulary match without structural kinship</strong> —
+  finding things that sound similar but aren't meaningfully related.
+</p>
+<p>
+  The graph layer fails by <strong>incompleteness</strong> — edges that should exist
+  but nobody drew them. Every graph has blind spots.
+</p>
+<p>
+  The artifact layer fails by <strong>absence</strong> — decisions not recorded,
+  context not written down, negative space that was never captured.
+</p>
+<p>
+  The three layers compensate for each other. Vectors provide coverage where
+  the graph is incomplete. The graph provides structure where vectors are noisy.
+  Artifacts provide ground truth where both layers are approximate.
+</p>
+
+<!-- ============================================ -->
+<!-- SIX USES                                     -->
+<!-- ============================================ -->
+<span class="section-num">Uses</span>
+<h2>Six things embeddings can do beyond similarity search</h2>
+
+<p>
+  Most systems use embeddings for exactly one thing: "find the nearest neighbor."
+  But a vector space supports at least six distinct operations:
+</p>
+
+<div class="canvas-wrap" style="max-width:760px">
+  <canvas id="usesCanvas" width="760" height="360"></canvas>
+</div>
+
+<table>
+  <tr><th>#</th><th>Use</th><th>Mechanism</th><th>What it finds</th></tr>
+  <tr><td>1</td><td><strong>Retrieval</strong></td><td>Query vs all nodes → top N</td><td>Best entry point into memory</td></tr>
+  <tr><td>2</td><td><strong>Discovery</strong></td><td>Pairwise similarity above threshold</td><td>Undeclared relationships</td></tr>
+  <tr><td>3</td><td><strong>Drift detection</strong></td><td>Compare old vs new embeddings of the same term</td><td>Meaning shift over time</td></tr>
+  <tr><td>4</td><td><strong>Cluster formation</strong></td><td>Community detection on similarity graph</td><td>Concept families emerging before they're named</td></tr>
+  <tr><td>5</td><td><strong>Gap detection</strong></td><td>Find isolated nodes far from all clusters</td><td>Orphans that should connect to something</td></tr>
+  <tr><td>6</td><td><strong>Surprise detection</strong></td><td>Curated edge + low cosine</td><td>Structural relationships invisible to surface similarity</td></tr>
+</table>
+
+<p>
+  Use #6 is especially important. A curated edge with low cosine similarity is not
+  a failure — it's a signal. It means: <em>these concepts are related through mechanism,
+  not through vocabulary</em>. These are exactly the connections that should be preserved
+  and studied, because they encode reasoning that no automated system would find.
+</p>
+
+<div class="callout">
+  <strong>Cosine finds proximity. Curated edges preserve reasoning.</strong><br>
+  The embedding space tells you what's nearby. The graph tells you what's connected
+  and <em>why</em>. The source artifacts tell you what actually happened. Three
+  layers, three questions, one system.
+</div>
+
 <footer>
   <p>
     Part of the <a href="https://github.com/isotopyofloops/kg-explainer">KG Explainer</a> series.
@@ -686,6 +926,577 @@ canvas.addEventListener('mouseup', ()=>{ dragNode=null; });
 canvas.addEventListener('mouseleave', ()=>{ dragNode=null; hoveredNode=null; draw(); });
 
 draw();
+
+// === BEYOND COSINE VISUALIZATIONS ===
+
+// --- Collapse diagram: 3072 dims → 1 scalar ---
+(function(){
+  const c = document.getElementById('collapseCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=760, H=220;
+
+  // Draw dimension bars (left side)
+  ctx.fillStyle='#f7f8fa'; ctx.fillRect(0,0,W,H);
+
+  // Label
+  ctx.font='11px Courier New'; ctx.fillStyle='#666';
+  ctx.fillText('3072 dimensions', 30, 20);
+
+  // Draw many colored bars representing dimensions
+  const barW = 2, gap = 1;
+  const startX = 30, startY = 32;
+  const barsPerRow = 120;
+  const rows = 8;
+  for(let row=0; row<rows; row++){
+    for(let i=0; i<barsPerRow; i++){
+      const x = startX + i*(barW+gap);
+      const y = startY + row*18;
+      const hue = (i*3 + row*40) % 360;
+      const val = Math.sin(i*0.1+row)*0.3 + 0.5;
+      ctx.fillStyle = `hsl(${hue}, 55%, ${45+val*20}%)`;
+      ctx.fillRect(x, y, barW, 14);
+    }
+  }
+
+  // Arrow
+  const arrowX = 420;
+  ctx.strokeStyle='#333'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(arrowX, 110); ctx.lineTo(arrowX+80, 110); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(arrowX+75, 105); ctx.lineTo(arrowX+80, 110); ctx.lineTo(arrowX+75, 115); ctx.stroke();
+
+  ctx.font='10px Courier New'; ctx.fillStyle='#666';
+  ctx.fillText('cosine(A, B)', arrowX+10, 130);
+
+  // Single output value
+  ctx.font='bold 32px Courier New'; ctx.fillStyle='var(--accent)';
+  ctx.fillStyle='#1a4fa3';
+  ctx.fillText('0.40', 540, 118);
+
+  ctx.font='11px Courier New'; ctx.fillStyle='#666';
+  ctx.fillText('1 scalar', 545, 140);
+
+  // Info loss indicator
+  ctx.font='11px Georgia'; ctx.fillStyle='#999';
+  ctx.fillText('Which dimensions contributed? Which disagreed? All hidden.', 30, 195);
+})();
+
+// --- Heatmap: same score, different structure ---
+(function(){
+  const c = document.getElementById('heatmapCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=760, H=300;
+  ctx.fillStyle='#f7f8fa'; ctx.fillRect(0,0,W,H);
+
+  function drawHeatmap(startX, startY, label, pattern, sublabel){
+    ctx.font='bold 11px Courier New'; ctx.fillStyle='#333';
+    ctx.fillText(label, startX, startY-8);
+    ctx.font='10px Georgia'; ctx.fillStyle='#666';
+    ctx.fillText(sublabel, startX, startY+6);
+
+    const blockW=4, blockH=18, gap=1;
+    const cols=80;
+
+    // Row 1: Query
+    ctx.font='9px Courier New'; ctx.fillStyle='#999';
+    ctx.fillText('query', startX-2, startY+34);
+    for(let i=0; i<cols; i++){
+      const val = pattern.query(i/cols);
+      const alpha = Math.max(0.05, val);
+      ctx.fillStyle=`rgba(26,79,163,${alpha})`;
+      ctx.fillRect(startX+45+i*(blockW+gap), startY+22, blockW, blockH);
+    }
+
+    // Row 2: Node
+    ctx.font='9px Courier New'; ctx.fillStyle='#999';
+    ctx.fillText('node', startX, startY+58);
+    for(let i=0; i<cols; i++){
+      const val = pattern.node(i/cols);
+      const alpha = Math.max(0.05, val);
+      ctx.fillStyle=`rgba(192,80,32,${alpha})`;
+      ctx.fillRect(startX+45+i*(blockW+gap), startY+46, blockW, blockH);
+    }
+
+    // Row 3: Agreement (product)
+    ctx.font='9px Courier New'; ctx.fillStyle='#999';
+    ctx.fillText('agree', startX-2, startY+82);
+    for(let i=0; i<cols; i++){
+      const val = Math.min(pattern.query(i/cols), pattern.node(i/cols));
+      const alpha = Math.max(0.05, val);
+      ctx.fillStyle=`rgba(10,122,106,${alpha})`;
+      ctx.fillRect(startX+45+i*(blockW+gap), startY+70, blockW, blockH);
+    }
+
+    // Score
+    ctx.font='bold 12px Courier New'; ctx.fillStyle='#333';
+    ctx.fillText('cos = 0.40', startX+45+cols*(blockW+gap)+10, startY+58);
+  }
+
+  // Pair A: vocabulary kinship — both concentrated in same region
+  drawHeatmap(30, 40, 'Pair A', {
+    query: (t)=> t>0.2 && t<0.5 ? 0.7+Math.sin(t*20)*0.2 : 0.1,
+    node:  (t)=> t>0.2 && t<0.5 ? 0.65+Math.cos(t*15)*0.2 : 0.08
+  }, 'vocabulary kinship — agreement concentrated in one region');
+
+  // Pair B: structural kinship — distributed across different regions
+  drawHeatmap(30, 170, 'Pair B', {
+    query: (t)=> {
+      if(t>0.1 && t<0.2) return 0.6;
+      if(t>0.4 && t<0.5) return 0.5;
+      if(t>0.7 && t<0.85) return 0.7;
+      return 0.08;
+    },
+    node: (t)=> {
+      if(t>0.1 && t<0.2) return 0.55;
+      if(t>0.4 && t<0.5) return 0.6;
+      if(t>0.7 && t<0.85) return 0.5;
+      return 0.1;
+    }
+  }, 'structural kinship — agreement distributed across multiple regions');
+
+  // Dim labels
+  ctx.font='9px Courier New'; ctx.fillStyle='#bbb';
+  ctx.fillText('dim 0', 75, 290);
+  ctx.fillText('dim 768', 215, 290);
+  ctx.fillText('dim 1536', 355, 290);
+  ctx.fillText('dim 2304', 455, 290);
+  ctx.fillText('dim 3072', 555, 290);
+})();
+
+// --- Gradient: edge direction in embedding space ---
+(function(){
+  const c = document.getElementById('gradientCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=760, H=280;
+  ctx.fillStyle='#f7f8fa'; ctx.fillRect(0,0,W,H);
+
+  // Left: elaboration (same subspace)
+  ctx.font='bold 11px Courier New'; ctx.fillStyle='#333';
+  ctx.fillText('Elaboration (same subspace)', 40, 25);
+  ctx.font='10px Georgia'; ctx.fillStyle='#666';
+  ctx.fillText('"basin key" → "antigenic sin in basin keys"', 40, 42);
+
+  // Draw two vectors roughly parallel
+  ctx.strokeStyle='#1a4fa3'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(80,100); ctx.lineTo(250,80); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(245,77); ctx.lineTo(250,80); ctx.lineTo(246,84); ctx.stroke();
+  ctx.fillStyle='#1a4fa3'; ctx.beginPath(); ctx.arc(80,100,5,0,Math.PI*2); ctx.fill();
+  ctx.font='9px Courier New'; ctx.fillStyle='#1a4fa3'; ctx.fillText('A', 72, 116);
+
+  ctx.strokeStyle='#c05020'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(100,130); ctx.lineTo(270,115); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(265,112); ctx.lineTo(270,115); ctx.lineTo(266,119); ctx.stroke();
+  ctx.fillStyle='#c05020'; ctx.beginPath(); ctx.arc(100,130,5,0,Math.PI*2); ctx.fill();
+  ctx.font='9px Courier New'; ctx.fillStyle='#c05020'; ctx.fillText('B', 92, 148);
+
+  // Angle arc (small)
+  ctx.strokeStyle='#0a7a6a'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(140, 110, 20, -0.12, 0.17); ctx.stroke();
+  ctx.font='10px Courier New'; ctx.fillStyle='#0a7a6a';
+  ctx.fillText('small angle', 165, 108);
+  ctx.fillText('same dims active', 165, 122);
+
+  // Right: domain shift (rotation into new subspace)
+  ctx.font='bold 11px Courier New'; ctx.fillStyle='#333';
+  ctx.fillText('Domain shift (rotation)', 420, 25);
+  ctx.font='10px Georgia'; ctx.fillStyle='#666';
+  ctx.fillText('"dormant fidelity" → "wake problem"', 420, 42);
+
+  // Draw two vectors at larger angle
+  ctx.strokeStyle='#1a4fa3'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(460,120); ctx.lineTo(620,85); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(615,82); ctx.lineTo(620,85); ctx.lineTo(615,89); ctx.stroke();
+  ctx.fillStyle='#1a4fa3'; ctx.beginPath(); ctx.arc(460,120,5,0,Math.PI*2); ctx.fill();
+  ctx.font='9px Courier New'; ctx.fillStyle='#1a4fa3'; ctx.fillText('A', 452, 136);
+
+  ctx.strokeStyle='#c05020'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(470,130); ctx.lineTo(640,180); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(636,176); ctx.lineTo(640,180); ctx.lineTo(634,179); ctx.stroke();
+  ctx.fillStyle='#c05020'; ctx.beginPath(); ctx.arc(470,130,5,0,Math.PI*2); ctx.fill();
+  ctx.font='9px Courier New'; ctx.fillStyle='#c05020'; ctx.fillText('B', 462, 146);
+
+  // Larger angle arc
+  ctx.strokeStyle='#c05020'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(500, 125, 30, -0.22, 0.45); ctx.stroke();
+  ctx.font='10px Courier New'; ctx.fillStyle='#c05020';
+  ctx.fillText('large rotation', 540, 145);
+  ctx.fillText('different dims activate', 540, 159);
+
+  // Bottom annotation
+  ctx.font='11px Georgia'; ctx.fillStyle='#555';
+  ctx.fillText('Elaboration edges keep you in the same conceptual neighborhood.', 40, 220);
+  ctx.fillText('Rotation edges cross into new territory — structural bridges.', 40, 238);
+  ctx.font='11px Georgia'; ctx.fillStyle='#999';
+  ctx.fillText('A traversal algorithm that detects rotation can prioritize bridges over elaboration during graph expansion.', 40, 264);
+})();
+
+// === QUERY-AS-PROBE ANIMATION ===
+let probeStage = 0;
+let probeAnim = null;
+
+function resetProbe(){
+  probeStage = 0;
+  if(probeAnim) cancelAnimationFrame(probeAnim);
+  probeAnim = null;
+  drawProbe();
+}
+
+function animateProbe(){
+  probeStage = 0;
+  if(probeAnim) cancelAnimationFrame(probeAnim);
+  let startTime = null;
+  function step(ts){
+    if(!startTime) startTime = ts;
+    const elapsed = ts - startTime;
+    if(elapsed > 600 && probeStage < 1) probeStage = 1;
+    if(elapsed > 1400 && probeStage < 2) probeStage = 2;
+    if(elapsed > 2200 && probeStage < 3) probeStage = 3;
+    if(elapsed > 3000 && probeStage < 4) probeStage = 4;
+    drawProbe();
+    if(probeStage < 4) probeAnim = requestAnimationFrame(step);
+    else probeAnim = null;
+  }
+  probeAnim = requestAnimationFrame(step);
+}
+
+function drawProbe(){
+  const c = document.getElementById('probeCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=760, H=420;
+  ctx.fillStyle='#f7f8fa'; ctx.fillRect(0,0,W,H);
+
+  // Define graph nodes for this visualization
+  const pNodes = [
+    {x:280,y:160,label:'negative\ndecision loss',lit:false,seed:true},
+    {x:420,y:130,label:'dormant\nfidelity',lit:false,seed:true},
+    {x:540,y:180,label:'wake\nproblem',lit:false,seed:false},
+    {x:160,y:200,label:'curated\nsilence',lit:false,seed:true},
+    {x:380,y:260,label:'instrument\ncompaction',lit:false,seed:false},
+    {x:560,y:300,label:'retrieval\ntrigger arch.',lit:false,seed:false},
+    {x:200,y:320,label:'genre-\nification',lit:false,seed:false},
+    {x:500,y:350,label:'operational\nfidelity def.',lit:false,seed:false},
+  ];
+
+  // Curated edges for this subgraph
+  const pEdges = [
+    {from:0,to:4,pred:'relates_to'},
+    {from:1,to:2,pred:'relates_to'},
+    {from:1,to:5,pred:'addresses'},
+    {from:4,to:6,pred:'caused_by'},
+    {from:1,to:7,pred:'defends_against'},
+    {from:0,to:1,pred:'similarity'},
+  ];
+
+  // Stage 0: query arrives
+  const queryY = 40;
+  ctx.font='11px Courier New'; ctx.fillStyle='#333';
+  ctx.fillText('Query: "What information disappears when I choose not to act?"', 180, queryY);
+
+  if(probeStage >= 1){
+    // Draw beam from query down to seeds
+    const seeds = [0,1,3]; // negative decision loss, dormant fidelity, curated silence
+    ctx.strokeStyle='rgba(26,79,163,0.15)';
+    ctx.lineWidth=40;
+    seeds.forEach(i=>{
+      ctx.beginPath(); ctx.moveTo(380, queryY+10); ctx.lineTo(pNodes[i].x, pNodes[i].y); ctx.stroke();
+    });
+    ctx.lineWidth=1;
+
+    // Light up seeds
+    seeds.forEach(i=>{ pNodes[i].lit = true; });
+
+    // Scores
+    ctx.font='9px Courier New'; ctx.fillStyle='#1a4fa3';
+    ctx.fillText('0.511', pNodes[0].x+20, pNodes[0].y-20);
+    ctx.fillText('0.468', pNodes[1].x+20, pNodes[1].y-20);
+    ctx.fillText('0.342', pNodes[3].x-50, pNodes[3].y-20);
+  }
+
+  if(probeStage >= 2){
+    // Draw curated edges radiating from lit nodes
+    pEdges.forEach(e=>{
+      const fromLit = pNodes[e.from].lit;
+      const toLit = pNodes[e.to].lit;
+      if(!fromLit && !toLit) return;
+      const s = pNodes[e.from], t = pNodes[e.to];
+      ctx.strokeStyle='rgba(10,122,106,0.6)';
+      ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(t.x,t.y); ctx.stroke();
+      // Light up the other end
+      pNodes[e.from].lit = true;
+      pNodes[e.to].lit = true;
+    });
+
+    // Stage label
+    ctx.font='10px Georgia'; ctx.fillStyle='#0a7a6a';
+    ctx.fillText('↳ graph edges expand neighborhood', 440, 260);
+  }
+
+  if(probeStage >= 3){
+    // Show artifact loading indicators
+    const artifacts = [
+      {node:0, file:'correspondence/negative-decisions-log.md'},
+      {node:1, file:'correspondence/dormant-fidelity-thread.md'},
+      {node:4, file:'notes/compaction-loss-analysis.md'},
+    ];
+    ctx.font='9px Courier New'; ctx.fillStyle='#666';
+    artifacts.forEach((a,i)=>{
+      const n = pNodes[a.node];
+      ctx.fillStyle='rgba(255,255,255,0.9)';
+      ctx.fillRect(n.x-10, n.y+22, 220, 16);
+      ctx.fillStyle='#666';
+      ctx.fillText('→ '+a.file, n.x-8, n.y+34);
+    });
+
+    ctx.font='10px Georgia'; ctx.fillStyle='#555';
+    ctx.fillText('↳ source artifacts loaded into working context', 440, 380);
+  }
+
+  if(probeStage >= 4){
+    // Final summary
+    ctx.fillStyle='rgba(240,245,250,0.95)';
+    ctx.fillRect(30, H-50, W-60, 40);
+    ctx.strokeStyle='var(--callout-border)';ctx.strokeStyle='#b8c8dc';
+    ctx.lineWidth=1;
+    ctx.strokeRect(30, H-50, W-60, 40);
+    ctx.font='11px Georgia'; ctx.fillStyle='#333';
+    ctx.fillText('Cosine found the door (3 entry points). The graph decided the room (5 neighbors via edges). Artifacts are the memory.', 44, H-26);
+  }
+
+  // Draw edges (dimmed unless stage 2+)
+  if(probeStage < 2){
+    pEdges.forEach(e=>{
+      const s = pNodes[e.from], t = pNodes[e.to];
+      ctx.strokeStyle='rgba(200,200,200,0.3)';
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(t.x,t.y); ctx.stroke();
+    });
+  }
+
+  // Draw nodes
+  pNodes.forEach((n,i)=>{
+    const r = n.lit ? 8 : 5;
+    if(n.lit && probeStage >= 1){
+      // Glow
+      ctx.fillStyle = n.seed ? 'rgba(26,79,163,0.12)' : 'rgba(10,122,106,0.1)';
+      ctx.beginPath(); ctx.arc(n.x,n.y,18,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = n.lit ? (n.seed ? '#1a4fa3' : '#0a7a6a') : '#bbb';
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2); ctx.fill();
+    ctx.font = n.lit ? '9px Courier New' : '8px Courier New';
+    ctx.fillStyle = n.lit ? '#333' : '#999';
+    const lines = n.label.split('\n');
+    lines.forEach((l,li)=>{
+      ctx.fillText(l, n.x+12, n.y+(li*11)-2);
+    });
+  });
+
+  // Stage labels on right
+  const stages = ['① Query becomes vector','② Cosine finds entry points','③ Graph edges expand','④ Artifacts load'];
+  ctx.font='10px Courier New';
+  stages.forEach((s,i)=>{
+    ctx.fillStyle = i <= probeStage ? '#1a4fa3' : '#ddd';
+    ctx.fillText(s, 590, 70+i*20);
+  });
+}
+drawProbe();
+
+// === THREE LAYERS DIAGRAM ===
+(function(){
+  const c = document.getElementById('layersCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=760, H=300;
+  ctx.fillStyle='#f7f8fa'; ctx.fillRect(0,0,W,H);
+
+  const layers = [
+    {y:40, h:70, color:'rgba(26,79,163,0.08)', border:'rgba(26,79,163,0.3)',
+     label:'Vector Layer', question:'Where should I look?',
+     detail:'Embeddings, cosine similarity, dimensional structure'},
+    {y:120, h:70, color:'rgba(10,122,106,0.08)', border:'rgba(10,122,106,0.3)',
+     label:'Graph Layer', question:'Why does this matter?',
+     detail:'Typed edges, predicates, neighborhood topology, convergence'},
+    {y:200, h:70, color:'rgba(100,80,60,0.06)', border:'rgba(100,80,60,0.25)',
+     label:'Artifact Layer', question:'What actually happened?',
+     detail:'Source documents, correspondence, notes, full text'},
+  ];
+
+  layers.forEach(l=>{
+    // Background band
+    ctx.fillStyle=l.color;
+    ctx.fillRect(40, l.y, W-80, l.h);
+    ctx.strokeStyle=l.border; ctx.lineWidth=1;
+    ctx.strokeRect(40, l.y, W-80, l.h);
+
+    // Label
+    ctx.font='bold 12px Courier New'; ctx.fillStyle='#333';
+    ctx.fillText(l.label, 60, l.y+25);
+
+    // Question
+    ctx.font='12px Georgia'; ctx.fillStyle='#555';
+    ctx.fillText(l.question, 220, l.y+25);
+
+    // Detail
+    ctx.font='10px Georgia'; ctx.fillStyle='#888';
+    ctx.fillText(l.detail, 60, l.y+50);
+  });
+
+  // Arrows between layers
+  ctx.strokeStyle='#666'; ctx.lineWidth=1.5;
+  ctx.setLineDash([4,3]);
+  // Layer 1 → 2
+  ctx.beginPath(); ctx.moveTo(380, 110); ctx.lineTo(380, 120); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(376,117); ctx.lineTo(380,122); ctx.lineTo(384,117); ctx.fill();
+  // Layer 2 → 3
+  ctx.beginPath(); ctx.moveTo(380, 190); ctx.lineTo(380, 200); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(376,197); ctx.lineTo(380,202); ctx.lineTo(384,197); ctx.fill();
+  ctx.setLineDash([]);
+
+  // Right side: flow labels
+  ctx.font='9px Courier New'; ctx.fillStyle='#999';
+  ctx.fillText('navigation', 640, 80);
+  ctx.fillText('interpretation', 640, 160);
+  ctx.fillText('ground truth', 640, 240);
+})();
+
+// === SIX USES DIAGRAM ===
+(function(){
+  const c = document.getElementById('usesCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=760, H=360;
+  ctx.fillStyle='#f7f8fa'; ctx.fillRect(0,0,W,H);
+
+  const uses = [
+    {x:130, y:70, label:'Retrieval', icon:'⎯→', desc:'entry point', color:'#1a4fa3'},
+    {x:380, y:70, label:'Discovery', icon:'- -', desc:'undeclared edges', color:'#c05020'},
+    {x:630, y:70, label:'Drift', icon:'↝', desc:'meaning shift', color:'#7a5a1a'},
+    {x:130, y:220, label:'Clusters', icon:'◎', desc:'concept families', color:'#0a7a6a'},
+    {x:380, y:220, label:'Gaps', icon:'·  ·', desc:'isolated nodes', color:'#666'},
+    {x:630, y:220, label:'Surprise', icon:'!', desc:'structure ≠ surface', color:'#8a2050'},
+  ];
+
+  uses.forEach(u=>{
+    // Circle
+    ctx.strokeStyle=u.color; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(u.x, u.y, 35, 0, Math.PI*2); ctx.stroke();
+
+    // Icon/number
+    ctx.font='18px Courier New'; ctx.fillStyle=u.color;
+    ctx.textAlign='center';
+    ctx.fillText(u.icon, u.x, u.y+6);
+
+    // Label
+    ctx.font='bold 11px Courier New'; ctx.fillStyle='#333';
+    ctx.fillText(u.label, u.x, u.y+55);
+
+    // Desc
+    ctx.font='10px Georgia'; ctx.fillStyle='#888';
+    ctx.fillText(u.desc, u.x, u.y+70);
+
+    ctx.textAlign='left';
+  });
+
+  // Central connector
+  ctx.strokeStyle='rgba(150,150,150,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(180,70); ctx.lineTo(580,70); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(180,220); ctx.lineTo(580,220); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(130,110); ctx.lineTo(130,180); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(380,110); ctx.lineTo(380,180); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(630,110); ctx.lineTo(630,180); ctx.stroke();
+
+  // Bottom annotation
+  ctx.font='11px Georgia'; ctx.fillStyle='#555';
+  ctx.textAlign='center';
+  ctx.fillText('Most systems only use #1. A knowledge graph enables all six.', W/2, 330);
+  ctx.textAlign='left';
+})();
+
+// --- Subspace projection ---
+(function(){
+  const c = document.getElementById('subspaceCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=760, H=280;
+  ctx.fillStyle='#f7f8fa'; ctx.fillRect(0,0,W,H);
+
+  // Left side: full space (all dims)
+  ctx.font='bold 11px Courier New'; ctx.fillStyle='#333';
+  ctx.fillText('Full cosine (all 3072 dims)', 40, 25);
+
+  // Draw scattered points
+  const fullPts = [
+    {x:100,y:80,label:'seed 1',color:'#1a4fa3'},
+    {x:150,y:120,label:'seed 2',color:'#1a4fa3'},
+    {x:130,y:150,label:'seed 3',color:'#1a4fa3'},
+    {x:200,y:100,label:'neighbor A',color:'#0a7a6a'},
+    {x:90, y:180,label:'neighbor B',color:'#c05020'},
+    {x:220,y:170,label:'neighbor C',color:'#c05020'},
+    {x:260,y:60, label:'noise',color:'#ccc'},
+    {x:50, y:60, label:'noise',color:'#ccc'},
+    {x:280,y:180,label:'noise',color:'#ccc'},
+  ];
+  fullPts.forEach(p=>{
+    ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill();
+    ctx.font='8px Courier New'; ctx.fillStyle=p.color==='#ccc'?'#bbb':p.color;
+    ctx.fillText(p.label, p.x+8, p.y+3);
+  });
+
+  // Cosine scores
+  ctx.font='9px Courier New'; ctx.fillStyle='#666';
+  ctx.fillText('cos(q, A) = 0.42', 160, 215);
+  ctx.fillText('cos(q, B) = 0.39', 160, 230);
+  ctx.fillText('cos(q, C) = 0.41', 160, 245);
+  ctx.font='9px Georgia'; ctx.fillStyle='#999';
+  ctx.fillText('All three score ~0.40', 160, 265);
+  ctx.fillText('Which is structurally relevant?', 160, 278);
+
+  // Arrow
+  ctx.strokeStyle='#333'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(330,140); ctx.lineTo(390,140); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(385,136); ctx.lineTo(390,140); ctx.lineTo(385,144); ctx.stroke();
+  ctx.font='9px Courier New'; ctx.fillStyle='#666';
+  ctx.fillText('project into', 335, 158);
+  ctx.fillText('seed subspace', 335, 170);
+
+  // Right side: projected (seed subspace only)
+  ctx.font='bold 11px Courier New'; ctx.fillStyle='#333';
+  ctx.fillText('Seed subspace only', 420, 25);
+
+  // Tighter cluster with A close, B and C far
+  const projPts = [
+    {x:500,y:100,label:'seed 1',color:'#1a4fa3'},
+    {x:530,y:130,label:'seed 2',color:'#1a4fa3'},
+    {x:510,y:150,label:'seed 3',color:'#1a4fa3'},
+    {x:545,y:115,label:'neighbor A',color:'#0a7a6a'},
+    {x:620,y:200,label:'neighbor B',color:'#c05020'},
+    {x:650,y:80, label:'neighbor C',color:'#c05020'},
+  ];
+  projPts.forEach(p=>{
+    ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill();
+    ctx.font='8px Courier New'; ctx.fillStyle=p.color;
+    ctx.fillText(p.label, p.x+8, p.y+3);
+  });
+
+  // Draw cluster circle around seeds + A
+  ctx.strokeStyle='rgba(10,122,106,0.4)'; ctx.lineWidth=1.5;
+  ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.ellipse(520, 125, 55, 45, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Projected scores
+  ctx.font='9px Courier New'; ctx.fillStyle='#0a7a6a';
+  ctx.fillText('proj(q, A) = 0.71  ← structurally aligned', 450, 215);
+  ctx.font='9px Courier New'; ctx.fillStyle='#c05020';
+  ctx.fillText('proj(q, B) = 0.18  ← coincidentally close', 450, 232);
+  ctx.fillText('proj(q, C) = 0.22  ← coincidentally close', 450, 249);
+  ctx.font='9px Georgia'; ctx.fillStyle='#555';
+  ctx.fillText('Subspace projection separates structural', 450, 270);
+  ctx.fillText('relevance from accidental proximity.', 450, 283);
+})();
 </script>
 </body>
 </html>

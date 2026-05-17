@@ -10,7 +10,7 @@ Cosine similarity between two unit vectors is the sum of their element-wise prod
 
 ## The table
 
-| Pair | Cosine | Skewness | Kurtosis | Top 1% cumsum | Top 10% cumsum |
+| Pair | Cosine | Skewness | Kurtosis | Top 1% cumulative sum | Top 10% cumulative sum |
 |------|--------|----------|----------|---------------|----------------|
 | Procedural Self ↔ introspection_gap | 0.425 | 6.0 | 87 | 0.095 | 0.338 |
 | fidelity signatures ↔ sacrifice threshold | 0.392 | 11.9 | 257 | 0.117 | 0.349 |
@@ -25,9 +25,9 @@ Cosine similarity between two unit vectors is the sum of their element-wise prod
 
 **Kurtosis**: How heavy the tails are. Higher = the distribution has more extreme outliers relative to its center. A normal distribution has kurtosis 3. Our pairs range from 87 to 257 — extremely heavy-tailed. This means a few dimensions carry enormous weight while most contribute near-zero. The *higher* the kurtosis, the more the similarity is driven by a *smaller* number of specific dimensions.
 
-**Top 1% cumsum**: The sum of contributions from just the top 30 dimensions (1% of 3072). Tells you how much of the positive signal is packed into the absolute strongest dimensions.
+**Top 1% cumulative sum**: The sum of contributions from just the top 30 dimensions (1% of 3072). Tells you how much of the positive signal is packed into the absolute strongest dimensions.
 
-**Top 10% cumsum**: Same but for the top 307 dimensions. Tells you how concentrated the signal is in the strongest ~10% of the space.
+**Top 10% cumulative sum**: Same but for the top 307 dimensions. Tells you how concentrated the signal is in the strongest ~10% of the space.
 
 ## What the numbers mean together
 

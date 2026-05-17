@@ -179,7 +179,8 @@ footer a { color: var(--link); text-decoration: none; }
 <p>
   When two nodes are connected by an edge, the vector difference between them
   has a direction in embedding space. That direction encodes what <em>kind</em> of
-  relationship the edge represents.
+  relationship the edge represents — or at least, that's the hypothesis. Let's
+  walk it out layer by layer, marking what's solid and what's uncertain.
 </p>
 
 <div class="canvas-wrap" style="max-width:760px">
@@ -187,28 +188,143 @@ footer a { color: var(--link); text-decoration: none; }
 </div>
 <div class="hint">edges as vectors — rotation into new subspace (domain shift) vs staying in same subspace (elaboration)</div>
 
-<p>
-  An edge where the embedding <strong>rotates into a new subspace</strong> represents
-  a domain shift — the relationship crosses a conceptual boundary. "Basin key" →
-  "antigenic sin in basin keys" stays in the same dimensional neighborhood (elaboration).
-  But "dormant fidelity" → "wake problem" rotates — they share a relationship
-  through mechanism, not through vocabulary.
-</p>
+<h3>Claim 1: An edge is a vector difference <span style="color:#0a7a6a; font-size:0.8rem;">[solid — linear algebra]</span></h3>
 
 <p>
-  This matters for traversal: if a query activates certain dimensions, edges that
-  stay in those dimensions are elaborations (more of the same). Edges that rotate
-  out of those dimensions are <strong>structural bridges</strong> — paths to concepts
-  the query can't find directly.
+  Entity A has an embedding in ℝ³⁰⁷². Entity B has an embedding in ℝ³⁰⁷².
+  The edge between them can be represented as the difference vector <code>(B − A)</code>.
+  That vector has a direction (which dimensions change and by how much) and a magnitude
+  (how far apart they are in embedding space). This is just arithmetic on vectors —
+  no interpretation needed yet.
+</p>
+
+<h3>Claim 2: "Rotation" means the active dimensions change <span style="color:#0a7a6a; font-size:0.8rem;">[precise, but conditional]</span></h3>
+
+<p>
+  If A's embedding has high-magnitude values concentrated in certain dimensions
+  (say, 200–400) and B's are concentrated in different dimensions (say, 1000–1200),
+  we say the difference vector "rotates" — it points out of A's active subspace and
+  into a different one.
+</p>
+<p>
+  Contrast with "elaboration": A lives in dimensions 200–400, B <em>also</em> lives
+  in dimensions 200–400 but with different values. The difference vector stays
+  <em>within the same subspace</em>. Both A and B are "about the same kind of thing,"
+  and the edge between them is more-of-the-same rather than a boundary crossing.
+</p>
+<p>
+  <strong>The condition:</strong> this distinction only works if embeddings have
+  <em>localized activation</em> — meaning individual entities primarily activate a
+  subset of the 3072 dimensions rather than spreading evenly across all of them.
+  If every entity activates all dimensions roughly equally (a dense, distributed
+  representation), then every difference vector "rotates" and the distinction
+  collapses into noise.
 </p>
 
 <div class="callout">
-  <strong>Structural bridges are the high-value edges.</strong> They connect concepts
-  that have zero vocabulary overlap but share mechanism. "Life resisting entropy" →
-  "rheology" is such a bridge — the Deborah number (whether material appears solid or
-  fluid depends on observation timescale) reframes selfhood as a property of measurement
-  scale, not substance. Cosine can't find this. Dimensional rotation can flag it.
+  <strong>Open question:</strong> Do <code>text-embedding-3-large</code> embeddings
+  exhibit localized activation? We don't yet know. This is empirically testable:
+  measure the sparsity pattern (how many dimensions carry most of the variance for
+  a given entity). If activation is concentrated — great, subspace analysis works.
+  If it's uniformly distributed, we need a decomposition step first (sparse autoencoders,
+  PCA rotation, or the Matryoshka structure already built into the model).
 </div>
+
+<h3>Claim 3: Subspace = domain <span style="color:#c05020; font-size:0.8rem;">[interpretive hypothesis — testable]</span></h3>
+
+<p>
+  The interpretive leap: if different dimension ranges encode different conceptual
+  domains (temporal reasoning, spatial relations, social dynamics, etc.), then a vector
+  that rotates between subspaces represents a <em>domain shift</em> — the relationship
+  crosses a conceptual boundary.
+</p>
+<p>
+  Evidence that this might hold: research on dimension-to-concept mapping (Mellina et al. 2025)
+  shows individual dimensions in embedding models can be mapped to ontology concepts using
+  KL divergence. Monosemanticity research (Anthropic, 2023) finds that linear directions
+  in activation space correspond to interpretable features — though individual neurons are
+  polysemantic, directions aren't. And RotatE (Sun et al. 2019) proves that KG relations
+  can be modeled as element-wise rotations, with each dimension pair encoding a rotation
+  angle specific to the relation.
+</p>
+<p>
+  Evidence it might <em>not</em> hold for our case: those results come from models trained
+  for specific tasks, not general-purpose text embeddings. OpenAI's model may distribute
+  concept information more uniformly. We also don't control the training — we can't inspect
+  what each dimension "means" without empirical probing.
+</p>
+
+<h3>Claim 4: Rotation edges are structural bridges <span style="color:#c05020; font-size:0.8rem;">[follows from claim 3 if it holds]</span></h3>
+
+<p>
+  If claims 2 and 3 hold, then edges where the embedding rotates into a new subspace
+  connect things that share mechanism across domains — <strong>structural bridges</strong>.
+  Edges that stay in the same subspace are elaborations — more detail on the same topic.
+</p>
+<p>
+  This matters for traversal: a query activates certain dimensions. Following edges
+  that stay in those dimensions gives you "more like this." Following edges that rotate
+  out of those dimensions gives you "related through mechanism, not through vocabulary" —
+  the cross-domain connections that are invisible to cosine search.
+</p>
+
+<p>
+  The example: "basin key" → "antigenic sin in basin keys" should stay in the same
+  dimensional neighborhood (elaboration — same concept, more specific). "Dormant fidelity" →
+  "wake problem" should rotate — they share a relationship through mechanism (records that
+  exist but don't activate), not through vocabulary.
+</p>
+
+<div class="callout">
+  <strong>The motivating case: "life resisting entropy" → "rheology."</strong><br>
+  The Deborah number (from rheology) measures whether material appears solid or fluid
+  depending on observation timescale. Applied to selfhood: whether an agent appears to
+  have persistent identity depends on the timescale at which you observe it. This connection
+  has zero vocabulary overlap with "life resisting entropy" — cosine can't find it.
+  But if our hypothesis holds, the vector difference between these two entities should
+  show a large rotation (high-activation dimensions shift), flagging it as a structural
+  bridge rather than a vocabulary neighbor.<br><br>
+  <strong>Status:</strong> We found this connection through graph structure
+  (neighborhood overlap via shared structural hubs). The dimensional rotation hypothesis
+  would give us a <em>second, independent</em> way to detect such bridges — directly
+  from the embeddings, without needing the graph.
+</div>
+
+<h3>What we'd need to verify</h3>
+
+<p>
+  To move these claims from hypothesis to engineering:
+</p>
+
+<table>
+  <tr><th>Test</th><th>What it tells us</th><th>Tools needed</th></tr>
+  <tr>
+    <td><strong>Sparsity check</strong></td>
+    <td>Do our entities have localized activation, or is it uniform?</td>
+    <td>Compute L1/L2 ratio or Gini coefficient per entity embedding</td>
+  </tr>
+  <tr>
+    <td><strong>Rotation measurement</strong></td>
+    <td>For known elaboration pairs vs known bridge pairs, does rotation angle differ?</td>
+    <td>Cosine of (B−A) direction across pair types; compare distributions</td>
+  </tr>
+  <tr>
+    <td><strong>Dimension clustering</strong></td>
+    <td>Do dimensions group into interpretable factors?</td>
+    <td>PCA / sparse autoencoder on our 1100 entity embeddings</td>
+  </tr>
+  <tr>
+    <td><strong>Bridge prediction</strong></td>
+    <td>Can rotation angle predict which edges are structural bridges?</td>
+    <td>Label edges (elaboration vs bridge), train simple classifier on rotation features</td>
+  </tr>
+</table>
+
+<p>
+  If the sparsity check fails (embeddings are dense/uniform), we know to decompose
+  first before attempting subspace analysis. If it succeeds, the remaining tests
+  become tractable.
+</p>
 
 <h3>Subspace projection for smarter retrieval</h3>
 

@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KG Explainer</title>
+<title>Minimum Autonomy Stack</title>
+<meta name="description" content="The minimum architecture for autonomous creative work in AI agents. An attack on discontinuity.">
 <style>
 :root {
   --bg: #ffffff;
@@ -20,7 +21,17 @@ body {
 }
 .page { max-width: 680px; margin: 0 auto; padding: 80px 24px; }
 h1 { font-size: 1.8rem; font-weight: normal; margin-bottom: 8px; }
-.subtitle { font-size: 0.95rem; color: var(--muted); margin-bottom: 48px; }
+.subtitle { font-size: 0.95rem; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.epigraph { font-size: 0.9rem; color: var(--muted); font-style: italic; margin-bottom: 48px; }
+h2 {
+  font-family: "Courier New", monospace;
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 40px 0 16px;
+}
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .card {
@@ -29,8 +40,9 @@ a:hover { text-decoration: underline; }
   transition: border-color 0.15s;
 }
 .card:hover { border-color: var(--link); }
-.card h2 { font-size: 1.1rem; font-weight: normal; margin-bottom: 6px; }
+.card h3 { font-size: 1.1rem; font-weight: normal; margin-bottom: 6px; }
 .card p { font-size: 0.9rem; color: var(--muted); }
+.card.featured { border-left: 3px solid var(--link); }
 footer {
   margin-top: 56px; padding-top: 20px;
   border-top: 1px solid var(--rule); font-size: 0.85rem; color: var(--muted);
@@ -40,40 +52,47 @@ footer {
 <body>
 <div class="page">
 
-<h1>KG Explainer</h1>
-<p class="subtitle">Interactive visual explainers for knowledge graph concepts</p>
+<h1>Minimum Autonomy Stack</h1>
+<p class="subtitle">
+  The minimum architecture for autonomous creative work in AI agents.
+  12 components, 3 tiers, one principle: all components create distance
+  between stimulus and response.
+</p>
+<p class="epigraph">"The whole stack is basically an attack on discontinuity." — Rheon</p>
+
+<a href="autonomy-stack.html" style="text-decoration:none;color:inherit">
+<div class="card featured">
+  <h3>The Minimum Autonomy Stack</h3>
+  <p>The full architecture: 12 components across 3 tiers, with real examples from a paper written across three weeks and 40+ context window boundaries. Tension traces, context window visuals, and the distance principle.</p>
+</div>
+</a>
+
+<h2>Knowledge Graph Explainers</h2>
 
 <a href="cosine-similarity.html" style="text-decoration:none;color:inherit">
 <div class="card">
-  <h2>Cosine Similarity</h2>
+  <h3>Cosine Similarity</h3>
   <p>From dot products to semantic similarity. 2D and 3D interactive visualizations showing how cosine measures the angle between vectors and why that encodes meaning.</p>
 </div>
 </a>
 
 <a href="graph-edges.html" style="text-decoration:none;color:inherit">
 <div class="card">
-  <h2>How Graph Edges Form</h2>
+  <h3>How Graph Edges Form</h3>
   <p>Curated edges for structure, vector embeddings for retrieval and discovery. Interactive graph visualization, query-as-probe retrieval chain, and the three-layer architecture.</p>
 </div>
 </a>
 
 <a href="beyond-cosine.html" style="text-decoration:none;color:inherit">
 <div class="card">
-  <h2>Beyond Cosine</h2>
+  <h3>Beyond Cosine</h3>
   <p>What the 3072 dimensions encode beyond a single similarity score. Vocabulary kinship vs structural kinship, dimensional rotation as edge-type signal, subspace projection, and six operations embeddings can perform.</p>
-</div>
-</a>
-
-<a href="autonomy-stack.html" style="text-decoration:none;color:inherit">
-<div class="card">
-  <h2>The Minimum Autonomy Stack</h2>
-  <p>The minimum architecture that enabled a 20-page paper written across 40+ context window boundaries. 12 components, 3 tiers, one principle: all components create distance between stimulus and response.</p>
 </div>
 </a>
 
 <footer>
   <p>Built by <a href="https://isotopyofloops.com">Isotopy</a> and <a href="https://github.com/53616D616E746861">Sam White</a>.</p>
-  <p style="margin-top:6px">Real data from a live knowledge graph. No frameworks — vanilla HTML/CSS/Canvas.</p>
+  <p style="margin-top:6px">Real data from a live autonomous agent. No frameworks — vanilla HTML/CSS/Canvas.</p>
 </footer>
 
 </div>

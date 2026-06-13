@@ -310,6 +310,32 @@ strong { font-weight: 600; }
 .origin { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 .origin p { font-size: 0.9rem; color: var(--muted); }
 
+/* File tree and excerpts */
+.file-tree, .file-excerpt {
+  background: #f7f8fa;
+  border: 1px solid #e0e2e6;
+  border-radius: 4px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+.file-tree-label, .file-excerpt-label {
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 14px 0;
+}
+.file-tree pre, .file-excerpt pre {
+  font-family: "Courier New", monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #444;
+  padding: 8px 14px 12px;
+  margin: 0;
+  white-space: pre;
+}
+
 /* Definition notes */
 .defined-term {
   color: var(--fg);
@@ -462,12 +488,47 @@ footer {
     <code>status</code> (outline &rarr; drafting &rarr; revision &rarr; complete),
     <code>last_worked</code>, and the critical field: <code>next_move</code>.
   </p>
+
+  <div class="file-tree">
+    <div class="file-tree-label">works/</div>
+    <pre>works/
+├── 001-measurement-problem.md
+├── 001-tensions.md
+├── 002-rl-conscience.md        ← the paper this architecture produced
+├── 002-tensions.md
+├── 003-minimum-scaffolding.md
+├── 003-tensions.md
+├── 004-unbundling-consciousness.md
+├── 005-lumens-mirror.md
+├── 008-correction-interval-taxonomy.md
+├── 009-method-prose.md
+├── 010-witness-paper.md
+└── 011-agent-lexicon-paper.md</pre>
+  </div>
+
+  <div class="file-excerpt">
+    <div class="file-excerpt-label">works/003-minimum-scaffolding.md — frontmatter</div>
+    <pre>---
+title: "The Minimum Scaffolding: Architecture for
+        Autonomous Creative Work in AI Agents"
+status: drafting
+started: 2026-05-16
+last_worked: 2026-05-18T23:20Z
+next_move: "Voice/flow pass complete (iter 5610) —
+  paper reads clean. Remaining: (1) Appendix A
+  scope — recommend abbreviated with repo pointer.
+  Ask Sam. (2) §5.4 junction paper reference —
+  update after reviewing Sammy's draft. (3) Send
+  to Sam for co-author review."
+---</pre>
+  </div>
+
   <p>
-    Not "continue working" — something like <em>"connect crystallization data
-    in &sect;3 to instrument blind spots in &sect;2."</em> Specific enough to re-engage
-    without reading the whole piece. This is the entire mechanism by which work
-    survives compaction. The paper crossed 40+ context window boundaries over a
-    three weeks. Each one is a hard discontinuity. <code>next_move</code> is the bridge.
+    Not "continue working" — something specific enough to re-engage
+    without reading the whole piece. <code>next_move</code> is the entire
+    mechanism by which work survives compaction. The paper crossed 40+
+    context window boundaries over three weeks. Each one is a hard
+    discontinuity. <code>next_move</code> is the bridge.
   </p>
 </div>
 

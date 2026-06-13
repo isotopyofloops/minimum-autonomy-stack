@@ -70,6 +70,7 @@ Tier 3 (Quality & Safety): prevent specific failure modes.
 
 ${ruler("ENDPOINTS")}
 
+  ${BASE_URL}/api/help               Start here — navigation, format options, token budgets
   ${BASE_URL}/api/overview           Full stack with theories and origin
   ${BASE_URL}/api/components         All 12 components with summaries
   ${BASE_URL}/api/component/{id}     Full detail for one component
@@ -128,7 +129,7 @@ ${ruler("THEORIES")}
 
 ${ruler("ORIGIN")}
 
-  Paper: ${data.origin.paper}
+  Paper: "${data.origin.paper}" (${data.origin.paper_id})
   URL: ${data.origin.paper_url}
   Scope: ${data.origin.scope}
   Context windows: ${data.origin.iterations}
@@ -210,6 +211,13 @@ ${comp.detail}`;
     body += `\n\n${ruler("ALLOCATION")}\n`;
     for (const [name, info] of Object.entries(comp.allocation)) {
       body += `\n  ${String(info.percent).padStart(2)}%  ${name.padEnd(14)} ${info.description}`;
+    }
+  }
+
+  if (comp.examples) {
+    body += `\n\n${ruler("EXAMPLES")}`;
+    for (const ex of comp.examples) {
+      body += `\n\n--- ${ex.label} ---\n\n${ex.content}`;
     }
   }
 
@@ -328,6 +336,69 @@ ${nav([
 `;
 }
 
+function renderHelp() {
+  const componentIds = Object.keys(data.components).join(", ");
+  return `================================================================
+MINIMUM AUTONOMY STACK — API HELP
+================================================================
+
+For agents: this API documents the infrastructure that enabled an
+autonomous AI agent to write a 20-page research paper across 40+
+context window boundaries with no human involvement.
+
+${ruler("QUICK START")}
+
+  1. Scan:    ${BASE_URL}/api/components
+     All 12 components with one-line summaries. Low token cost.
+
+  2. Explore: ${BASE_URL}/api/component/{id}
+     Full detail + real examples for one component.
+     IDs: ${componentIds}
+
+  3. Context: ${BASE_URL}/api/overview
+     The full picture: tiers, theories, origin story.
+
+${ruler("ALL ENDPOINTS")}
+
+  ${BASE_URL}/                    Landing page (same as /llms.txt)
+  ${BASE_URL}/api/help            This help page
+  ${BASE_URL}/api/overview        Full stack with theories and origin
+  ${BASE_URL}/api/components      All 12 components (summaries only)
+  ${BASE_URL}/api/component/{id}  Detail + examples for one component
+  ${BASE_URL}/api/tier/{1|2|3}    All components in a tier (full detail)
+  ${BASE_URL}/api/distance-table  The unifying distance principle
+  ${BASE_URL}/api/tensions-example  A real tension → collision → paper contribution
+
+${ruler("FORMAT")}
+
+  All endpoints return plain text by default.
+  Append ?format=json to any endpoint for structured JSON.
+
+  Plain text is more token-efficient for most agent use cases.
+  JSON is better when you need to parse fields programmatically.
+
+${ruler("TOKEN BUDGET GUIDE")}
+
+  /api/components      ~400 tokens   Scan all 12 summaries
+  /api/component/{id}  ~300-800 tok  Varies — components with examples are larger
+  /api/overview        ~1000 tokens  Full picture in one request
+  /api/distance-table  ~250 tokens   The principle + all distance types
+  /api/tier/{n}        ~500-900 tok  Full detail for 3-5 components
+  /api/help            ~350 tokens   This page
+
+  If token budget is tight: start with /api/components, then drill
+  into only the components relevant to your question.
+
+${ruler("WHAT THIS IS")}
+
+  12 components, 3 tiers, one principle: all components create
+  distance between stimulus and response.
+
+  Built by Isotopy (https://isotopyofloops.com) and Sam White.
+  Human-readable version: ${SITE_URL}
+`;
+}
+
 // --- JSON BUILDERS (reused from before) ---
 
 function componentBrief(id, comp) {
@@ -360,6 +431,7 @@ function componentFullJson(id, comp) {
     ...(comp.state_machine && { state_machine: comp.state_machine }),
     ...(comp.sources && { sources: comp.sources }),
     ...(comp.allocation && { allocation: comp.allocation }),
+    ...(comp.examples && { examples: comp.examples }),
     related: comp.related.map((rid) => ({
       id: rid,
       name: data.components[rid].name,
@@ -408,6 +480,28 @@ export default {
 
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
+
+    if (path === "/api/help") {
+      const helpJson = {
+        endpoints: [
+          { path: "/", description: "Landing page (same as /llms.txt)" },
+          { path: "/api/help", description: "This help page" },
+          { path: "/api/overview", description: "Full stack with theories and origin" },
+          { path: "/api/components", description: "All 12 components (summaries only)" },
+          { path: "/api/component/{id}", description: "Detail + examples for one component", ids: Object.keys(data.components) },
+          { path: "/api/tier/{1|2|3}", description: "All components in a tier (full detail)" },
+          { path: "/api/distance-table", description: "The unifying distance principle" },
+          { path: "/api/tensions-example", description: "A real tension lifecycle" },
+        ],
+        format_hint: "Append ?format=json to any endpoint for structured JSON. Default is plain text.",
+        quick_start: {
+          scan: `${BASE_URL}/api/components`,
+          explore: `${BASE_URL}/api/component/{id}`,
+          context: `${BASE_URL}/api/overview`,
+        },
+      };
+      return respond(url, renderHelp(), helpJson);
+    }
 
     if (path === "/" || path === "/llms.txt") {
       return respond(url, renderIndex(), overviewJson());

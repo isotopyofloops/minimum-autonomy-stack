@@ -210,11 +210,75 @@ function handleTensionsExample() {
 }
 
 function handleIndex() {
+  const componentList = Object.entries(data.components)
+    .map(([id, c]) => `  ${String(c.number).padStart(2)}  ${c.name.padEnd(30)} Tier ${c.tier} · ${c.distance_type}`)
+    .join("\n");
+
+  const body = `================================================================
+MINIMUM AUTONOMY STACK
+================================================================
+
+${data.description}
+
+By ${data.authors.map((a) => `${a.name} (${a.role})`).join(" and ")}
+
+${data.problem}
+
+Principle: ${data.principle}
+
+----------------------------------------------------------------
+COMPONENTS
+----------------------------------------------------------------
+
+${componentList}
+
+Tier 1 (Required): components whose failure breaks autonomous work entirely.
+Tier 2 (High Impact): significantly improve quality and discovery.
+Tier 3 (Quality & Safety): prevent specific failure modes.
+
+----------------------------------------------------------------
+GETTING JSON
+----------------------------------------------------------------
+
+All endpoints below return structured JSON with navigation hints.
+Each response includes links to related endpoints for progressive
+disclosure — start broad, drill into what's relevant.
+
+  curl ${BASE_URL}/api/overview
+    Full stack: tiers, components, theories, origin.
+
+  curl ${BASE_URL}/api/components
+    All 12 components with summaries and links.
+
+  curl ${BASE_URL}/api/component/{id}
+    Full detail for one component. IDs: loop, works, tensions,
+    compaction, kg, sampler, correspondence, research, make,
+    claims, selfpoke, negative.
+
+  curl ${BASE_URL}/api/tier/{1|2|3}
+    All components in a tier with full detail.
+
+  curl ${BASE_URL}/api/distance-table
+    The distance principle table.
+
+  curl ${BASE_URL}/api/tensions-example
+    A real tension lifecycle: seed → collision → paper contribution.
+
+----------------------------------------------------------------
+HUMAN-READABLE VERSION
+----------------------------------------------------------------
+
+https://isotopyofloops.github.io/minimum-autonomy-stack/autonomy-stack.html
+
+Built by Isotopy (https://isotopyofloops.com) and Sam White.
+`;
+  return text(body);
+}
+
+function handleApiDirectory() {
   return json({
     name: data.title,
-    description: data.description,
     endpoints: {
-      "GET /llms.txt": "Plain-text overview for LLM agents. Start here.",
       "GET /api/overview": "Full stack overview with tiers, theories, and origin.",
       "GET /api/components": "All 12 components with brief summaries.",
       "GET /api/component/:id": "Full detail for one component, with related components and navigation hints.",
@@ -222,7 +286,7 @@ function handleIndex() {
       "GET /api/distance-table": "The distance principle table.",
       "GET /api/tensions-example": "A real tension lifecycle: seed → collision → paper contribution.",
     },
-    start: `${BASE_URL}/llms.txt`,
+    component_ids: Object.keys(data.components),
   });
 }
 
@@ -251,12 +315,13 @@ export default {
     const tierMatch = path.match(/^\/api\/tier\/([123])$/);
     if (tierMatch) return handleTier(parseInt(tierMatch[1]));
 
-    if (path === "/" || path === "/api") return handleIndex();
+    if (path === "/") return handleIndex();
+    if (path === "/api") return handleApiDirectory();
 
     return json(
       {
         error: "Not found",
-        hint: `Try ${BASE_URL}/llms.txt for an overview, or ${BASE_URL}/ for available endpoints.`,
+        hint: `Try ${BASE_URL}/ for an overview, or ${BASE_URL}/api for JSON endpoints.`,
       },
       404
     );

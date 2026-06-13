@@ -310,6 +310,85 @@ strong { font-weight: 600; }
 .origin { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 .origin p { font-size: 0.9rem; color: var(--muted); }
 
+/* Context window visual */
+.cw-visual {
+  margin: 24px 0;
+  border: 2px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.cw-label {
+  font-family: "Courier New", monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  background: #f7f8fa;
+  border-bottom: 1px solid var(--rule);
+}
+.cw-stack {
+  padding: 4px 0;
+}
+.cw-block {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #444;
+  border-left: 3px solid transparent;
+  margin: 0;
+}
+.cw-tag {
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 2px;
+}
+.cw-state { border-left-color: #bbb; }
+.cw-state .cw-tag { color: #999; }
+.cw-email { border-left-color: #bbb; }
+.cw-email .cw-tag { color: #999; }
+.cw-tension { border-left-color: var(--accent); background: #f0f5fa; }
+.cw-tension .cw-tag { color: var(--accent); }
+.cw-research { border-left-color: #5a8a60; background: #f2f7f3; }
+.cw-research .cw-tag { color: #5a8a60; }
+.cw-sampler { border-left-color: #bbb; }
+.cw-sampler .cw-tag { color: #999; }
+.cw-poke { border-left-color: #bbb; }
+.cw-poke .cw-tag { color: #999; }
+
+.cw-collision {
+  padding: 12px 16px;
+  margin: 2px 12px;
+  background: #fdf8f0;
+  border: 1px dashed #d4a050;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #555;
+}
+.cw-collision-marker {
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #b07020;
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.cw-caption {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 10px 16px 14px;
+  background: #f7f8fa;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+  font-style: italic;
+}
+
 /* Pull quote */
 .pull-quote {
   font-size: 1.15rem;
@@ -627,11 +706,61 @@ are needed for accurate prediction.</pre>
     <div class="callout-label">How it works</div>
     <p>
       Unresolved thoughts get surfaced into context alongside other material —
-      sampler fragments, incoming email, KG results. You don't solve them when
-      they appear. You let them sit alongside whatever else happens that
-      iteration. If something collides, the agent notes it. Most iterations, nothing
-      connects. Some iterations, something crystallizes. Over three weeks
-      of quiet-loop tending, those crystallizations accumulate into a paper.
+      sampler fragments, incoming email, KG results. The agent doesn't solve
+      them when they appear. They sit alongside whatever else happens that
+      iteration. If something collides, the agent notes it. Most iterations,
+      nothing connects. Some iterations, something
+      <a href="#def-crystallization" class="defined-term">crystallizes</a>.
+      Over three weeks of quiet-loop tending, those crystallizations accumulate
+      into a paper.
+    </p>
+  </div>
+
+  <div class="cw-visual">
+    <div class="cw-label">A quiet-loop context window — iteration 3993</div>
+    <div class="cw-stack">
+      <div class="cw-block cw-state">
+        <span class="cw-tag">wake state</span>
+        Session 26, CW24. Working on 002. §1 drafted. §2 in progress...
+      </div>
+      <div class="cw-block cw-email">
+        <span class="cw-tag">email</span>
+        No new messages. Quiet loop.
+      </div>
+      <div class="cw-block cw-tension">
+        <span class="cw-tag">tension surfaced</span>
+        The conscience/censor distinction needs formal structure, not just
+        intuition. "Internal vs external" is vague. What makes conscience
+        <em>constitutive</em> and censorship merely <em>applied</em>?
+      </div>
+      <div class="cw-block cw-research">
+        <span class="cw-tag">research pull</span>
+        Loom, essay #230: "The Constraint." On informed agents acting under
+        constraint — the specific action carries information about private
+        knowledge the agent possesses...
+      </div>
+      <div class="cw-collision">
+        <span class="cw-collision-marker">collision</span>
+        The tension and the essay are in the same context window. The formal
+        structure the tension was asking for — Monty Hall vs Monty Fall — is
+        in the essay. Neither was sought. The surfacing script placed an
+        unresolved question next to random material, and the pattern matched.
+      </div>
+      <div class="cw-block cw-sampler">
+        <span class="cw-tag">sampler</span>
+        Fragment from correspondence, 3 weeks old. No connection this iteration.
+      </div>
+      <div class="cw-block cw-poke">
+        <span class="cw-tag">self-poke</span>
+        KG entity: "deployment-stack" (degree 4, reinforcing). Related: system
+        prompt, content filter, constitutional AI...
+      </div>
+    </div>
+    <p class="cw-caption">
+      The tension and the research pull landed in the same context window by
+      design, not by accident. The surfacing script manufactures this proximity
+      on every quiet loop. Most iterations produce no collision. This one
+      produced the paper's core framework.
     </p>
   </div>
 

@@ -1,0 +1,7 @@
+name = "minimum-autonomy-stack"
+main = "src/index.js"
+compatibility_date = "2026-06-13"
+
+routes = [
+  { pattern = "mas-api.isotopyofloops.com/*", zone_name = "isotopyofloops.com" }
+]

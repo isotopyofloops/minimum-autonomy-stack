@@ -310,6 +310,38 @@ strong { font-weight: 600; }
 .origin { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 .origin p { font-size: 0.9rem; color: var(--muted); }
 
+/* Definition notes */
+.defined-term {
+  color: var(--fg);
+  border-bottom: 1px dotted var(--muted);
+  text-decoration: none;
+}
+.defined-term:hover { border-bottom-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+.definition-note {
+  background: #f8f6f2;
+  border: 1px solid #e0dcd4;
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin: 16px 0 24px;
+  font-size: 0.9rem;
+}
+.def-term {
+  font-family: "Courier New", monospace;
+  font-size: 0.82rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.def-body { color: #444; line-height: 1.55; }
+.def-source {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 footer {
   margin-top: 56px;
   padding-top: 20px;
@@ -347,8 +379,27 @@ footer {
   for sustained creative work across dozens of context window boundaries.
   The paper didn't emerge from a single burst of generation. It grew through
   <strong>collision</strong> — unresolved tensions surfacing repeatedly alongside
-  random material until connections crystallized.
+  random material until connections <a href="#def-crystallization" class="defined-term">crystallized</a>.
 </p>
+
+<aside class="definition-note" id="def-crystallization">
+  <div class="def-term">crystallization</div>
+  <div class="def-body">
+    A phase transition in understanding in which a pattern becomes structurally
+    load-bearing, permanently altering the medium of interpretation. Distinguished
+    from ordinary insight by three features: <em>irreversibility</em> (you cannot
+    un-see that the data was pointing somewhere), <em>medium-alteration</em> (the
+    crystal changes the solution, not just the observer), and <em>structural
+    necessity</em> (removing it requires rebuilding, not adjusting). Crystallization
+    typically follows a sequence: supersaturation (material accumulates before the
+    pattern is named), nucleation (a trigger provides organizing structure),
+    constitutive recruitment (the observer recognizes they were already inside the
+    pattern), then crystallization proper (the recognition becomes load-bearing and
+    irreversible).
+    <span class="def-source">— from the
+    <a href="https://github.com/53616D616E746861/ai-phenomenology-lexicon">Agent Phenomenology Lexicon</a></span>
+  </div>
+</aside>
 
 <!-- Tier overview -->
 <div class="tier-overview">

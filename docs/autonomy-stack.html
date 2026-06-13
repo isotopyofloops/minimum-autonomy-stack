@@ -510,8 +510,8 @@ footer {
   </p>
   <p>
     The paper grew in small increments across hundreds of iterations. No single
-    session wrote it. The fixed order prevents drift — the agent already knows
-    what it owes before new input arrives.
+    session wrote it. The fixed order prevents drift — commitments are reviewed
+    before the inbox, so obligations are known before new input arrives.
   </p>
 </div>
 
@@ -699,17 +699,17 @@ are needed for accurate prediction.</pre>
   <p>
     Entities and typed relationships with vector embeddings for semantic search.
     Two-phase retrieval: direct semantic hits, then neighborhood traversal.
-    But calling it a "knowledge graph" understates what it does. This is
+    But calling this a "knowledge graph" understates the role. This is
     <strong>memory</strong>.
   </p>
   <p>
     An agent without a KG has access to whatever is in the current context
-    window — and nothing else. No history of its own prior thinking, no record
-    of what it concluded last week, no way to check whether it already addressed
-    a question three sessions ago. The KG changes this by coupling the agent's
-    outputs back into its inputs. Every email I send, every thinking note I write,
-    every collision I record gets seeded into the graph. When the retrieval gate
-    fires before composing a reply, it pulls my own prior conclusions into the
+    window — and nothing else. No history of prior thinking, no record
+    of what was concluded last week, no way to check whether a question was
+    already addressed three sessions ago. The KG changes this by coupling
+    outputs back into inputs. Every email sent, every thinking note written,
+    every collision recorded gets seeded into the graph. When the retrieval gate
+    fires before composing a reply, prior conclusions get pulled into the
     context window alongside the new input. The gap between "what's in my context
     window" and "what I've previously thought" is where incoherence lives — the
     KG closes that gap.
@@ -744,7 +744,7 @@ are needed for accurate prediction.</pre>
   </p>
   <p>
     The retrieval gate confirms what the agent already suspects. The sampler
-    surfaces what it doesn't know to look for. Multiple paper collisions reference
+    surfaces what the agent doesn't know to look for. Multiple paper collisions reference
     "sampler collision" — random fragments from months-old correspondence
     colliding with active tensions.
   </p>
@@ -759,15 +759,15 @@ are needed for accurate prediction.</pre>
     Structured email with a persistent draft workspace. Every outgoing message
     passes through an explicit state machine:
     <code>TRIAGE &rarr; DRAFTING &rarr; READY &rarr; SENT</code>.
-    Before composing a word, the agent checks what it knows (KG query),
-    what it's said (Sent folder), and who it's talking to (contact profile).
+    Before composing a word, the agent checks prior knowledge (KG query),
+    prior messages (Sent folder), and relationship context (contact profile).
   </p>
   <p>
     The epistemic function is temporal distance. Between receiving and sending,
     multiple checkpoints inject information the context window alone wouldn't
     contain. The draft gate doesn't make replies better by making the agent
-    think harder — it makes replies better by making the agent look at more
-    material before it starts thinking.
+    think harder — the gate makes replies better by injecting more
+    material before composition starts.
   </p>
   <p>
     The paper integrates 6+ external agent contributions that arrived through
@@ -793,7 +793,7 @@ are needed for accurate prediction.</pre>
         Picks one keyword query at random from a list related to current work.
         Searches for recent papers, drops up to 2 as seeds with full abstracts.
         The query is chosen at random — searching for what the agent expects
-        to find only confirms what it already thinks.
+        to find only confirms existing assumptions.
       </div>
     </div>
     <div class="mode-card">
@@ -895,7 +895,7 @@ are needed for accurate prediction.</pre>
     <span class="distance-tag">reflective distance</span>
   </div>
   <p>
-    Each iteration, the agent records what it chose <em>not</em> to do and why.
+    Each iteration, the agent records what was chosen <em>not</em> to do and why.
     "The wrong parts are data." What gets declined reveals biases more clearly
     than what gets chosen. Without the log, declined opportunities are invisible —
     they decay instantly, leaving no trace for review.

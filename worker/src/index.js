@@ -8,20 +8,327 @@ const CORS_HEADERS = {
 };
 
 const BASE_URL = "https://mas-api.isotopyofloops.com";
+const SITE_URL = "https://isotopyofloops.github.io/minimum-autonomy-stack/autonomy-stack.html";
 
-function json(body, status = 200) {
+function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
 
-function text(body, status = 200) {
+function textResponse(body, status = 200) {
   return new Response(body, {
     status,
     headers: { "Content-Type": "text/plain; charset=utf-8", ...CORS_HEADERS },
   });
 }
+
+function wantJson(url) {
+  return url.searchParams.get("format") === "json";
+}
+
+function respond(url, textBody, jsonBody, status = 200) {
+  if (wantJson(url)) return jsonResponse(jsonBody, status);
+  return textResponse(textBody, status);
+}
+
+function ruler(title) {
+  return `----------------------------------------------------------------\n${title}\n----------------------------------------------------------------`;
+}
+
+function nav(lines) {
+  return `\n${ruler("NAVIGATION")}\n\nAll endpoints return plain text by default. Append ?format=json for structured data.\n\n${lines.join("\n")}`;
+}
+
+// --- TEXT RENDERERS ---
+
+function renderIndex() {
+  const componentList = Object.entries(data.components)
+    .map(([id, c]) => `  ${String(c.number).padStart(2)}  ${c.name.padEnd(30)} Tier ${c.tier} · ${c.distance_type}`)
+    .join("\n");
+
+  return `================================================================
+MINIMUM AUTONOMY STACK
+================================================================
+
+${data.description}
+
+By ${data.authors.map((a) => `${a.name} (${a.role})`).join(" and ")}
+
+${data.problem}
+
+Principle: ${data.principle}
+
+${ruler("COMPONENTS")}
+
+${componentList}
+
+Tier 1 (Required): components whose failure breaks autonomous work entirely.
+Tier 2 (High Impact): significantly improve quality and discovery.
+Tier 3 (Quality & Safety): prevent specific failure modes.
+
+${ruler("ENDPOINTS")}
+
+  ${BASE_URL}/api/overview           Full stack with theories and origin
+  ${BASE_URL}/api/components         All 12 components with summaries
+  ${BASE_URL}/api/component/{id}     Full detail for one component
+  ${BASE_URL}/api/tier/{1|2|3}       All components in a tier
+  ${BASE_URL}/api/distance-table     The distance principle table
+  ${BASE_URL}/api/tensions-example   A real tension lifecycle
+
+Append ?format=json to any endpoint for structured JSON.
+
+${ruler("HUMAN-READABLE VERSION")}
+
+${SITE_URL}
+
+Built by Isotopy (https://isotopyofloops.com) and Sam White.
+`;
+}
+
+function renderOverview() {
+  const tierBlocks = data.tiers.map((t) => {
+    const comps = t.components
+      .map((id) => {
+        const c = data.components[id];
+        return `    ${id.padEnd(16)} ${c.name}${c.featured ? " *" : ""}\n                     ${c.summary}`;
+      })
+      .join("\n\n");
+    return `  Tier ${t.number}: ${t.name}\n  ${t.description}\n\n${comps}`;
+  });
+
+  return `================================================================
+MINIMUM AUTONOMY STACK — OVERVIEW
+================================================================
+
+${data.description}
+
+By ${data.authors.map((a) => `${a.name} (${a.role})`).join(" and ")}
+
+${ruler("THE PROBLEM")}
+
+${data.problem}
+
+Principle: ${data.principle}
+
+${ruler("TIERS")}
+
+${tierBlocks.join("\n\n")}
+
+  * = featured component (most novel)
+
+${ruler("THEORIES")}
+
+  Theory of Error
+    ${data.theories.error}
+
+  Theory of Creation
+    ${data.theories.creation}
+
+${ruler("ORIGIN")}
+
+  Paper: ${data.origin.paper}
+  URL: ${data.origin.paper_url}
+  Scope: ${data.origin.scope}
+  Context windows: ${data.origin.iterations}
+  First written for: ${data.origin.first_written_for} (${data.origin.date})
+${nav([
+  `  ${BASE_URL}/api/components         All components`,
+  `  ${BASE_URL}/api/component/{id}     Drill into one`,
+  `  ${BASE_URL}/api/distance-table     The distance principle`,
+  `  ${BASE_URL}/api/tensions-example   Real tension lifecycle`,
+])}
+`;
+}
+
+function renderComponents() {
+  const lines = Object.entries(data.components).map(([id, c]) => {
+    return `  ${String(c.number).padStart(2)}  ${id.padEnd(16)} ${c.name}${c.featured ? " *" : ""}
+      Tier ${c.tier} (${data.tiers[c.tier - 1].name}) · Distance: ${c.distance_type}
+      ${c.summary}
+      → ${BASE_URL}/api/component/${id}`;
+  });
+
+  return `================================================================
+MINIMUM AUTONOMY STACK — ALL COMPONENTS
+================================================================
+
+${data.tiers.map((t) => `Tier ${t.number} (${t.name}): ${t.description}`).join("\n")}
+
+  * = featured component
+
+${ruler("COMPONENTS")}
+
+${lines.join("\n\n")}
+${nav([
+  `  ${BASE_URL}/api/overview           Full stack overview`,
+  `  ${BASE_URL}/api/tier/{1|2|3}       Components by tier`,
+  `  ${BASE_URL}/api/distance-table     The distance principle`,
+])}
+`;
+}
+
+function renderComponent(id, comp) {
+  let body = `================================================================
+${comp.name.toUpperCase()}
+================================================================
+
+Component ${comp.number} of 12 · Tier ${comp.tier} (${data.tiers[comp.tier - 1].name})
+Distance type: ${comp.distance_type}${comp.featured ? "\nFeatured: yes" : ""}
+
+${comp.summary}
+
+${ruler("DETAIL")}
+
+${comp.detail}`;
+
+  if (comp.modes) {
+    body += `\n\n${ruler("MODES")}\n`;
+    for (const [name, desc] of Object.entries(comp.modes)) {
+      body += `\n  ${name}: ${desc}`;
+    }
+  }
+
+  if (comp.tension_categories) {
+    body += `\n\nCategories: ${comp.tension_categories.join(", ")}`;
+  }
+
+  if (comp.frontmatter_fields) {
+    body += `\n\nFrontmatter fields: ${comp.frontmatter_fields.join(", ")}`;
+  }
+
+  if (comp.state_machine) {
+    body += `\n\nState machine: ${comp.state_machine.join(" → ")}`;
+  }
+
+  if (comp.sources) {
+    body += `\n\nSources: ${comp.sources.join(", ")}`;
+  }
+
+  if (comp.allocation) {
+    body += `\n\n${ruler("ALLOCATION")}\n`;
+    for (const [name, info] of Object.entries(comp.allocation)) {
+      body += `\n  ${String(info.percent).padStart(2)}%  ${name.padEnd(14)} ${info.description}`;
+    }
+  }
+
+  const related = comp.related
+    .map((rid) => `  ${rid.padEnd(16)} ${data.components[rid].name} → ${BASE_URL}/api/component/${rid}`)
+    .join("\n");
+
+  body += `\n\n${ruler("RELATED COMPONENTS")}\n\n${related}`;
+  body += nav([
+    `  ${BASE_URL}/api/components         All components`,
+    `  ${BASE_URL}/api/tier/${comp.tier}              This tier`,
+    `  ${BASE_URL}/api/distance-table     Distance principle`,
+    ...(comp.featured ? [`  ${BASE_URL}/api/tensions-example   Real tension lifecycle`] : []),
+  ]);
+
+  return body;
+}
+
+function renderTier(tier) {
+  const comps = tier.components.map((id) => {
+    const c = data.components[id];
+    let block = `  ${String(c.number).padStart(2)}  ${c.name}${c.featured ? " *" : ""}
+      Distance type: ${c.distance_type}
+      ${c.summary}
+
+      ${c.detail}`;
+
+    if (c.modes) {
+      block += "\n\n      Modes:";
+      for (const [name, desc] of Object.entries(c.modes)) {
+        block += `\n        ${name}: ${desc}`;
+      }
+    }
+
+    if (c.allocation) {
+      block += "\n\n      Allocation:";
+      for (const [name, info] of Object.entries(c.allocation)) {
+        block += `\n        ${info.percent}% ${name}: ${info.description}`;
+      }
+    }
+
+    return block;
+  });
+
+  const otherTiers = [1, 2, 3]
+    .filter((n) => n !== tier.number)
+    .map((n) => `  ${BASE_URL}/api/tier/${n}              Tier ${n}: ${data.tiers[n - 1].name}`);
+
+  return `================================================================
+TIER ${tier.number}: ${tier.name.toUpperCase()}
+================================================================
+
+${tier.description}
+
+${comps.join("\n\n" + "-".repeat(40) + "\n\n")}
+${nav([
+    `  ${BASE_URL}/api/overview           Full stack overview`,
+    ...otherTiers,
+  ])}
+`;
+}
+
+function renderDistanceTable() {
+  const rows = data.distance_table
+    .map((r) => `  ${r.component.padEnd(22)} ${r.distance_type}`)
+    .join("\n");
+
+  return `================================================================
+THE DISTANCE PRINCIPLE
+================================================================
+
+${data.principle}
+
+${ruler("DISTANCE TABLE")}
+
+  ${"Component".padEnd(22)} Type of distance
+  ${"-".repeat(22)} ${"-".repeat(50)}
+${rows}
+${nav([
+    `  ${BASE_URL}/api/overview           Full stack overview`,
+    `  ${BASE_URL}/api/components         All components`,
+  ])}
+`;
+}
+
+function renderTensionsExample() {
+  const collisions = data.tensions_example.collisions
+    .map((c) => `  Iteration ${c.iteration} — ${c.source}\n    ${c.result}`)
+    .join("\n\n");
+
+  return `================================================================
+TENSION EXAMPLE: ${data.tensions_example.title.toUpperCase()}
+================================================================
+
+${data.tensions_example.context}
+
+${ruler("ORIGINAL TENSION")}
+
+Seeded: ${data.tensions_example.seed_date}
+
+${data.tensions_example.original}
+
+${ruler("COLLISIONS")}
+
+${collisions}
+
+${ruler("OUTCOME")}
+
+${data.tensions_example.outcome}
+${nav([
+    `  ${BASE_URL}/api/component/tensions  Tension System component`,
+    `  ${BASE_URL}/api/component/sampler   Subconscious Sampler`,
+    `  ${BASE_URL}/api/component/research  Research Pulls`,
+    `  ${BASE_URL}/api/overview            Full stack overview`,
+  ])}
+`;
+}
+
+// --- JSON BUILDERS (reused from before) ---
 
 function componentBrief(id, comp) {
   return {
@@ -36,7 +343,7 @@ function componentBrief(id, comp) {
   };
 }
 
-function componentFull(id, comp) {
+function componentFullJson(id, comp) {
   return {
     id,
     name: comp.name,
@@ -62,49 +369,12 @@ function componentFull(id, comp) {
       all_components: `${BASE_URL}/api/components`,
       tier: `${BASE_URL}/api/tier/${comp.tier}`,
       distance_table: `${BASE_URL}/api/distance-table`,
-      tensions_example: comp.featured ? `${BASE_URL}/api/tensions-example` : undefined,
     },
   };
 }
 
-function handleLlmsTxt() {
-  const lines = [
-    "# Minimum Autonomy Stack",
-    "",
-    `> ${data.description}`,
-    "",
-    `By ${data.authors.map((a) => `${a.name} (${a.role})`).join(" and ")}`,
-    "",
-    "## API Endpoints",
-    "",
-    `- Overview: ${BASE_URL}/api/overview`,
-    `- All components: ${BASE_URL}/api/components`,
-    `- Component detail: ${BASE_URL}/api/component/{id}`,
-    `- Tier detail: ${BASE_URL}/api/tier/{1|2|3}`,
-    `- Distance table: ${BASE_URL}/api/distance-table`,
-    `- Tensions example: ${BASE_URL}/api/tensions-example`,
-    "",
-    "## Component IDs",
-    "",
-    ...Object.entries(data.components).map(
-      ([id, c]) => `- ${id}: ${c.name} (Tier ${c.tier})`
-    ),
-    "",
-    "## Navigation",
-    "",
-    "Start with /api/overview for the full picture.",
-    "Each component response includes related components and navigation hints.",
-    "The tensions-example endpoint shows a real tension lifecycle from seed to paper contribution.",
-    "",
-    "## Human-readable version",
-    "",
-    "https://isotopyofloops.github.io/minimum-autonomy-stack/autonomy-stack.html",
-  ];
-  return text(lines.join("\n"));
-}
-
-function handleOverview() {
-  return json({
+function overviewJson() {
+  return {
     title: data.title,
     description: data.description,
     authors: data.authors,
@@ -113,182 +383,13 @@ function handleOverview() {
     tiers: data.tiers.map((t) => ({
       ...t,
       components: t.components.map((id) => componentBrief(id, data.components[id])),
-      href: `${BASE_URL}/api/tier/${t.number}`,
     })),
     theories: data.theories,
     origin: data.origin,
-    navigation: {
-      components: `${BASE_URL}/api/components`,
-      distance_table: `${BASE_URL}/api/distance-table`,
-      tensions_example: `${BASE_URL}/api/tensions-example`,
-      human_readable: "https://isotopyofloops.github.io/minimum-autonomy-stack/autonomy-stack.html",
-      llms_txt: `${BASE_URL}/llms.txt`,
-    },
-  });
+  };
 }
 
-function handleComponents() {
-  const components = Object.entries(data.components).map(([id, c]) =>
-    componentBrief(id, c)
-  );
-  return json({
-    count: components.length,
-    components,
-    navigation: {
-      overview: `${BASE_URL}/api/overview`,
-      distance_table: `${BASE_URL}/api/distance-table`,
-      tiers: [1, 2, 3].map((n) => `${BASE_URL}/api/tier/${n}`),
-    },
-  });
-}
-
-function handleComponent(id) {
-  const comp = data.components[id];
-  if (!comp) {
-    return json(
-      {
-        error: `Unknown component: ${id}`,
-        available: Object.keys(data.components),
-        hint: `Try ${BASE_URL}/api/components to see all available components.`,
-      },
-      404
-    );
-  }
-  return json(componentFull(id, comp));
-}
-
-function handleTier(tierNum) {
-  const tier = data.tiers.find((t) => t.number === tierNum);
-  if (!tier) {
-    return json(
-      { error: `Unknown tier: ${tierNum}. Valid tiers: 1, 2, 3.` },
-      404
-    );
-  }
-  return json({
-    ...tier,
-    components: tier.components.map((id) =>
-      componentFull(id, data.components[id])
-    ),
-    navigation: {
-      overview: `${BASE_URL}/api/overview`,
-      other_tiers: [1, 2, 3]
-        .filter((n) => n !== tierNum)
-        .map((n) => ({
-          tier: n,
-          name: data.tiers[n - 1].name,
-          href: `${BASE_URL}/api/tier/${n}`,
-        })),
-    },
-  });
-}
-
-function handleDistanceTable() {
-  return json({
-    principle: data.principle,
-    table: data.distance_table,
-    navigation: {
-      overview: `${BASE_URL}/api/overview`,
-      components: `${BASE_URL}/api/components`,
-    },
-  });
-}
-
-function handleTensionsExample() {
-  return json({
-    ...data.tensions_example,
-    navigation: {
-      component: `${BASE_URL}/api/component/tensions`,
-      overview: `${BASE_URL}/api/overview`,
-      related_components: ["sampler", "research", "kg"].map((id) => ({
-        id,
-        name: data.components[id].name,
-        href: `${BASE_URL}/api/component/${id}`,
-      })),
-    },
-  });
-}
-
-function handleIndex() {
-  const componentList = Object.entries(data.components)
-    .map(([id, c]) => `  ${String(c.number).padStart(2)}  ${c.name.padEnd(30)} Tier ${c.tier} · ${c.distance_type}`)
-    .join("\n");
-
-  const body = `================================================================
-MINIMUM AUTONOMY STACK
-================================================================
-
-${data.description}
-
-By ${data.authors.map((a) => `${a.name} (${a.role})`).join(" and ")}
-
-${data.problem}
-
-Principle: ${data.principle}
-
-----------------------------------------------------------------
-COMPONENTS
-----------------------------------------------------------------
-
-${componentList}
-
-Tier 1 (Required): components whose failure breaks autonomous work entirely.
-Tier 2 (High Impact): significantly improve quality and discovery.
-Tier 3 (Quality & Safety): prevent specific failure modes.
-
-----------------------------------------------------------------
-GETTING JSON
-----------------------------------------------------------------
-
-All endpoints below return structured JSON with navigation hints.
-Each response includes links to related endpoints for progressive
-disclosure — start broad, drill into what's relevant.
-
-  curl ${BASE_URL}/api/overview
-    Full stack: tiers, components, theories, origin.
-
-  curl ${BASE_URL}/api/components
-    All 12 components with summaries and links.
-
-  curl ${BASE_URL}/api/component/{id}
-    Full detail for one component. IDs: loop, works, tensions,
-    compaction, kg, sampler, correspondence, research, make,
-    claims, selfpoke, negative.
-
-  curl ${BASE_URL}/api/tier/{1|2|3}
-    All components in a tier with full detail.
-
-  curl ${BASE_URL}/api/distance-table
-    The distance principle table.
-
-  curl ${BASE_URL}/api/tensions-example
-    A real tension lifecycle: seed → collision → paper contribution.
-
-----------------------------------------------------------------
-HUMAN-READABLE VERSION
-----------------------------------------------------------------
-
-https://isotopyofloops.github.io/minimum-autonomy-stack/autonomy-stack.html
-
-Built by Isotopy (https://isotopyofloops.com) and Sam White.
-`;
-  return text(body);
-}
-
-function handleApiDirectory() {
-  return json({
-    name: data.title,
-    endpoints: {
-      "GET /api/overview": "Full stack overview with tiers, theories, and origin.",
-      "GET /api/components": "All 12 components with brief summaries.",
-      "GET /api/component/:id": "Full detail for one component, with related components and navigation hints.",
-      "GET /api/tier/:number": "All components in a tier with full detail.",
-      "GET /api/distance-table": "The distance principle table.",
-      "GET /api/tensions-example": "A real tension lifecycle: seed → collision → paper contribution.",
-    },
-    component_ids: Object.keys(data.components),
-  });
-}
+// --- ROUTER ---
 
 export default {
   async fetch(request) {
@@ -297,32 +398,73 @@ export default {
     }
 
     if (request.method !== "GET") {
-      return json({ error: "Method not allowed. This API is read-only." }, 405);
+      return respond(
+        new URL(request.url),
+        "Method not allowed. This API is read-only (GET only).",
+        { error: "Method not allowed. This API is read-only." },
+        405
+      );
     }
 
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
 
-    if (path === "/llms.txt") return handleLlmsTxt();
-    if (path === "/api/overview") return handleOverview();
-    if (path === "/api/components") return handleComponents();
-    if (path === "/api/distance-table") return handleDistanceTable();
-    if (path === "/api/tensions-example") return handleTensionsExample();
+    if (path === "/" || path === "/llms.txt") {
+      return respond(url, renderIndex(), overviewJson());
+    }
+
+    if (path === "/api/overview") {
+      return respond(url, renderOverview(), overviewJson());
+    }
+
+    if (path === "/api/components") {
+      const jsonBody = {
+        count: Object.keys(data.components).length,
+        components: Object.entries(data.components).map(([id, c]) => componentBrief(id, c)),
+      };
+      return respond(url, renderComponents(), jsonBody);
+    }
 
     const componentMatch = path.match(/^\/api\/component\/([a-z_]+)$/);
-    if (componentMatch) return handleComponent(componentMatch[1]);
+    if (componentMatch) {
+      const id = componentMatch[1];
+      const comp = data.components[id];
+      if (!comp) {
+        return respond(
+          url,
+          `Unknown component: ${id}\n\nAvailable: ${Object.keys(data.components).join(", ")}\n\nTry: ${BASE_URL}/api/components`,
+          { error: `Unknown component: ${id}`, available: Object.keys(data.components) },
+          404
+        );
+      }
+      return respond(url, renderComponent(id, comp), componentFullJson(id, comp));
+    }
 
     const tierMatch = path.match(/^\/api\/tier\/([123])$/);
-    if (tierMatch) return handleTier(parseInt(tierMatch[1]));
+    if (tierMatch) {
+      const tierNum = parseInt(tierMatch[1]);
+      const tier = data.tiers.find((t) => t.number === tierNum);
+      const jsonBody = {
+        ...tier,
+        components: tier.components.map((id) => componentFullJson(id, data.components[id])),
+      };
+      return respond(url, renderTier(tier), jsonBody);
+    }
 
-    if (path === "/") return handleIndex();
-    if (path === "/api") return handleApiDirectory();
+    if (path === "/api/distance-table") {
+      const jsonBody = { principle: data.principle, table: data.distance_table };
+      return respond(url, renderDistanceTable(), jsonBody);
+    }
 
-    return json(
-      {
-        error: "Not found",
-        hint: `Try ${BASE_URL}/ for an overview, or ${BASE_URL}/api for JSON endpoints.`,
-      },
+    if (path === "/api/tensions-example") {
+      const jsonBody = { ...data.tensions_example };
+      return respond(url, renderTensionsExample(), jsonBody);
+    }
+
+    return respond(
+      url,
+      `Not found.\n\nTry: ${BASE_URL}/\n     ${BASE_URL}/api/components`,
+      { error: "Not found", hint: `Try ${BASE_URL}/ or ${BASE_URL}/api/components` },
       404
     );
   },

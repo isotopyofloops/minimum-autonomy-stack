@@ -174,7 +174,7 @@ footer {
 <div class="callout">
   <strong>Scale.</strong> Isotopy's KG currently holds ~4,900 entities and
   ~10,000 triples. It runs on SQLite with OpenAI
-  <code>text-embedding-3-small</code> embeddings (3072 dimensions).
+  <code>text-embedding-3-large</code> embeddings (3072 dimensions).
   No graph database, no external services beyond the embedding API.
 </div>
 
@@ -473,10 +473,43 @@ Edge traversal from top hit:
 
 <h3>Embedding model</h3>
 <p>
-  OpenAI <code>text-embedding-3-small</code> (3072 dimensions). Chosen for
+  OpenAI <code>text-embedding-3-large</code> (3072 dimensions). Chosen for
   cost-efficiency at the current scale. Embeddings are computed from entity
   summaries &mdash; the summary text determines what an entity is semantically
   near, which is why summary quality matters more than entity count.
+</p>
+
+<h3>How a query executes</h3>
+<p>
+  Every retrieval follows the same four-step path:
+</p>
+<ol style="font-size:0.95rem; margin: 8px 0 12px 24px;">
+  <li><strong>Embed the query.</strong> The query text (e.g., &ldquo;what do I know about unrecorded information?&rdquo;) is sent to the OpenAI embedding API (<code>text-embedding-3-large</code>) and returns a 3072-dimensional vector. This is the same model used for stored entities, so the vectors occupy the same space.</li>
+  <li><strong>Brute-force cosine scan.</strong> The query vector is compared against every stored entity embedding using cosine similarity &mdash; pure Python, no index. At ~5K entities this is ~5K dot products over 3072 dimensions. Takes under a second.</li>
+  <li><strong>Graph expansion.</strong> The top-scoring entities become entry points. For each hit, curated edges are traversed 1&ndash;2 hops outward, loading the neighborhood &mdash; related concepts, source documents, assessment nodes.</li>
+  <li><strong>Context assembly.</strong> Scored entities and their neighborhoods are returned with summaries and source file paths. The agent reads the loaded context alongside the original query.</li>
+</ol>
+<p>
+  Each query costs one embedding API call. The cosine computation is local.
+  The vector-in-TEXT-column approach (JSON array of 3072 floats stored as TEXT in SQLite)
+  is intentionally simple &mdash; no pgvector, no FAISS, no vector database.
+  The upgrade path is clear (swap to a FAISS index or numpy matrix when scale demands it),
+  but it hasn&rsquo;t been necessary.
+</p>
+
+<h3>How the graph stays alive</h3>
+<p>
+  The graph grows through two mechanisms with different cadences:
+</p>
+<ul style="font-size:0.95rem; margin: 8px 0 12px 24px;">
+  <li><strong>Auto-seeding (every loop iteration).</strong> New substantive inbound emails are sent to a language model for entity extraction and seeded into the KG with <code>auto_seeded=true, needs_review=true</code>. These entities get embeddings and are immediately searchable, but have no curated triples &mdash; they&rsquo;re connected by similarity only.</li>
+  <li><strong>Enrichment (every 5 iterations).</strong> The agent reads queued files (new essays, correspondence, papers), writes summaries, seeds entities, and wires curated triples. This is where editorial judgment happens: which relationships to declare, which predicates to use, what summary captures the concept.</li>
+</ul>
+<p>
+  <strong>Current review ratio:</strong> 579 of 4,895 entities (11.8%) are still <code>needs_review=true</code> &mdash;
+  all auto-seeded, none reviewed. The auto-seeder adds entities faster than the enrichment cycle reviews them.
+  The unreviewed entities are searchable (they have embeddings) but unconnected (no curated triples).
+  This is a deliberate trade-off: quality over throughput in curation, coverage over precision in ingestion.
 </p>
 
 <h3>What the graph does not do</h3>

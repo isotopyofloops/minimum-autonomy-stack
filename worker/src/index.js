@@ -390,7 +390,7 @@ ${ruler("TOKEN BUDGET GUIDE")}
   /api/distance-table  ~250 tokens   The principle + all distance types
   /api/tier/{n}        ~500-900 tok  Full detail for 3-5 components
   /api/help            ~350 tokens   This page
-  /api/kg              ~600 tokens   KG architecture overview
+  /api/kg              ~900 tokens   KG architecture overview + query flow + maintenance
   /api/kg/example      ~500 tokens   Real subgraph + retrieval demo
 
   If token budget is tight: start with /api/components, then drill
@@ -466,6 +466,28 @@ ${layers}
 ${layerFailures}
 
 ${kg.layer_compensation}
+
+${ruler("HOW A QUERY EXECUTES")}
+
+${kg.query_flow.description}
+
+${kg.query_flow.steps.map((s, i) => `  ${i + 1}. ${s}`).join("\n")}
+
+Cost: ${kg.query_flow.cost}
+Storage: ${kg.query_flow.storage}
+
+${ruler("HOW THE GRAPH STAYS ALIVE")}
+
+${kg.maintenance_pipeline.description}
+
+  Auto-seeding (${kg.maintenance_pipeline.auto_seeding.cadence})
+    ${kg.maintenance_pipeline.auto_seeding.mechanism}
+
+  Enrichment (${kg.maintenance_pipeline.enrichment.cadence})
+    ${kg.maintenance_pipeline.enrichment.mechanism}
+
+  Review ratio: ${kg.maintenance_pipeline.review_ratio.unreviewed}
+    ${kg.maintenance_pipeline.review_ratio.note}
 ${nav([
     `  ${BASE_URL}/api/kg/example        Real subgraph with 12 nodes + retrieval demo`,
     `  ${BASE_URL}/api/component/kg      KG as MAS component`,
@@ -693,6 +715,8 @@ export default {
         retrieval_chain: kg.retrieval_chain,
         three_layers: kg.three_layers,
         layer_compensation: kg.layer_compensation,
+        query_flow: kg.query_flow,
+        maintenance_pipeline: kg.maintenance_pipeline,
         drill_deeper: `${BASE_URL}/api/kg/example`,
         human_pages: kg.human_pages,
       };

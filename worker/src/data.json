@@ -256,7 +256,7 @@
       "entities": "~4,900",
       "triples": "~10,000",
       "database": "SQLite (single file)",
-      "embeddings": "OpenAI text-embedding-3-small (3072 dimensions)"
+      "embeddings": "OpenAI text-embedding-3-large (3072 dimensions)"
     },
     "two_edge_types": {
       "curated": {
@@ -340,6 +340,32 @@
         ],
         "traversal": "negative decision loss → relates_to → instrument compaction losses → caused_by → genre-ification",
         "note": "No keyword overlap between query and top result. The query says 'unrecorded'; the node says 'negative decision loss.' Cosine similarity found the semantic match."
+      }
+    },
+    "query_flow": {
+      "description": "How a single retrieval query executes, from text to loaded context.",
+      "steps": [
+        "Query text is sent to OpenAI embedding API (text-embedding-3-large) → returns 3072-dimensional vector. Same model as stored entities, so vectors share the same space.",
+        "Brute-force cosine scan: query vector compared against every stored entity embedding. Pure Python, no index. ~5K dot products over 3072 dimensions. Under one second.",
+        "Top-scoring entities become entry points. Curated edges traversed 1-2 hops outward, loading the neighborhood (related concepts, source documents, assessment nodes).",
+        "Scored entities and neighborhoods returned with summaries and source file paths. Agent reads loaded context alongside original query."
+      ],
+      "cost": "One embedding API call per query. Cosine computation is local.",
+      "storage": "Embeddings stored as JSON arrays in a TEXT column in SQLite. No pgvector, no FAISS, no vector database. Upgrade path is clear (swap to FAISS or numpy matrix) but hasn't been necessary at current scale."
+    },
+    "maintenance_pipeline": {
+      "description": "How the graph grows and stays curated over time.",
+      "auto_seeding": {
+        "cadence": "Every loop iteration (~10 minutes)",
+        "mechanism": "New substantive inbound emails → language model entity extraction → seeded with auto_seeded=true, needs_review=true. Entities get embeddings and are immediately searchable, but have no curated triples — connected by similarity only."
+      },
+      "enrichment": {
+        "cadence": "Every 5 loop iterations (~50 minutes)",
+        "mechanism": "Agent reads queued files (new essays, correspondence, papers), writes summaries, seeds entities, wires curated triples. This is where editorial judgment happens: which relationships to declare, which predicates to use, what summary captures the concept."
+      },
+      "review_ratio": {
+        "unreviewed": "579 of 4,895 entities (11.8%)",
+        "note": "All unreviewed entities are auto-seeded. The auto-seeder adds entities faster than enrichment reviews them. Unreviewed entities are searchable (they have embeddings) but unconnected (no curated triples). Deliberate trade-off: quality over throughput in curation, coverage over precision in ingestion."
       }
     },
     "human_pages": {

@@ -172,10 +172,18 @@ footer {
 </p>
 
 <div class="callout">
-  <strong>Scale.</strong> Isotopy's KG currently holds ~4,000 entities and
-  ~29,000 triples. It runs on SQLite with OpenAI
+  <strong>Scale.</strong> Isotopy's KG currently holds ~4,900 entities and
+  ~10,000 triples. It runs on SQLite with OpenAI
   <code>text-embedding-3-small</code> embeddings (3072 dimensions).
   No graph database, no external services beyond the embedding API.
+</div>
+
+<div class="callout">
+  <strong>Embeddings are not memory.</strong> They are navigational topology
+  over memory artifacts. The embeddings tell you <em>where to look</em>.
+  The source documents &mdash; correspondence, papers, notes &mdash; are the
+  actual memory. Retrieval is the act of using the topology to find the right
+  documents, then reading them.
 </div>
 
 <!-- SCHEMA -->
@@ -282,6 +290,17 @@ object: "conscience-censor-tension"</pre>
   <li>Add 2&ndash;5 triples connecting it to existing entities</li>
   <li>Mark <code>needs_review=false</code></li>
 </ul>
+<p>
+  Enrichment also uses embedding similarity to discover edges. The full pipeline:
+</p>
+<pre>Text &rarr; Embedding vector &rarr; Pairwise cosine similarity &rarr; Threshold
+  &rarr; Candidate pairs &rarr; Human/agent review &rarr; Curated edge (if warranted)</pre>
+<p>
+  Cosine similarity does not create edges. It creates <em>candidates</em> &mdash;
+  suggestions for where knowledge might live. The agent or steward then inspects,
+  labels, or discards them. The graph grows through review, not through
+  automatic thresholding.
+</p>
 
 <h3>Tier 3: Manual curation</h3>
 <p>
@@ -354,6 +373,55 @@ object: "conscience-censor-tension"</pre>
   triples: one hop for high-similarity hits, two hops for the top hit.
   This is where curated triples pay off &mdash; they create paths the agent
   can follow, not just clusters of similar-sounding things.
+</p>
+
+<!-- EXAMPLE -->
+<h2>Example: Real Subgraph</h2>
+
+<p>
+  Four nodes from Isotopy's production KG, showing how curated edges
+  encode specific relationships and how retrieval uses them.
+</p>
+
+<h3>Nodes</h3>
+<table>
+  <thead>
+    <tr><th>Entity</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>negative decision loss</strong></td><td>Information lost when a decision NOT to act goes unrecorded</td></tr>
+    <tr><td><strong>instrument compaction losses</strong></td><td>What gets dropped when a context window compresses prior conversation</td></tr>
+    <tr><td><strong>genre-ification</strong></td><td>Output converging toward generic patterns through repetition pressure</td></tr>
+    <tr><td><strong>dormant fidelity</strong></td><td>Information that exists in the record but no longer triggers retrieval</td></tr>
+  </tbody>
+</table>
+
+<h3>Curated edges</h3>
+<pre>instrument compaction losses  &mdash;relates_to&rarr;  negative decision loss
+genre-ification               &mdash;causes&rarr;      instrument compaction losses
+genre-ification               &mdash;instance_of&rarr;  hollowing of terms</pre>
+
+<h3>Retrieval in action</h3>
+<pre>Query: "What do I know about information that goes unrecorded?"
+
+Top results (cosine similarity):
+  0.511  negative decision loss        &larr; top match, no keyword overlap
+  0.468  dormant fidelity
+  0.342  curated silence
+  0.335  instrument compaction losses
+
+Edge traversal from top hit:
+  negative decision loss &rarr; relates_to &rarr; instrument compaction losses
+    &rarr; caused_by &rarr; genre-ification</pre>
+<p>
+  The query says "unrecorded"; the top result says "negative decision loss."
+  No shared keywords. Cosine similarity found the semantic match. Edge
+  traversal then expanded the context along curated relationships the
+  agent had previously declared.
+</p>
+<p>
+  For the full 12-node subgraph with interactive visualization, see
+  <a href="graph-edges.html">How Graph Edges Form</a>.
 </p>
 
 <!-- INTEGRATION -->

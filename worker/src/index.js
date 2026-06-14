@@ -445,6 +445,9 @@ ${ruler("TWO EDGE TYPES")}
     ${kg.two_edge_types.computed.description}
     ${kg.two_edge_types.computed.key_distinction}
 
+  Discovery pipeline:
+    ${kg.two_edge_types.computed.discovery_pipeline}
+
 ${ruler("RETRIEVAL CHAIN")}
 
 ${kg.retrieval_chain.description}

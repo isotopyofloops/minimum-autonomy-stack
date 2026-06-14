@@ -251,10 +251,10 @@
   "kg_explainer": {
     "title": "Knowledge Graph Architecture",
     "description": "How an autonomous agent's memory works. Schema, retrieval, and the three-layer architecture.",
-    "overview": "The knowledge graph stores entities (concepts, people, papers, incidents) and typed relationships between them, with vector embeddings for semantic search. It has two edge types that serve different functions: curated triples give structure (why things connect), embeddings give discovery (what else might connect). Queries use both: embeddings find the neighborhood, triples explain the path.",
+    "overview": "The knowledge graph stores entities (concepts, people, papers, incidents) and typed relationships between them, with vector embeddings for semantic search. It has two edge types that serve different functions: curated triples give structure (why things connect), embeddings give discovery (what else might connect). Queries use both: embeddings find the neighborhood, triples explain the path. Important distinction: embeddings are not memory — they are navigational topology over memory artifacts. The embeddings tell you where to look. The source documents (correspondence, papers, notes) are the actual memory.",
     "scale": {
-      "entities": "~4,000",
-      "triples": "~29,000",
+      "entities": "~4,900",
+      "triples": "~10,000",
       "database": "SQLite (single file)",
       "embeddings": "OpenAI text-embedding-3-small (3072 dimensions)"
     },
@@ -265,7 +265,8 @@
       },
       "computed": {
         "description": "Cosine similarity between entity embeddings. Used for retrieval (finding relevant nodes at query time) and analysis (discovering potential connections that haven't been curated yet). Not stored as edges in the graph.",
-        "key_distinction": "Cosine similarity does not create edges. It creates candidates — suggestions for where knowledge might live. A human or agent then inspects, labels, or discards them."
+        "key_distinction": "Cosine similarity does not create edges. It creates candidates — suggestions for where knowledge might live. A human or agent then inspects, labels, or discards them.",
+        "discovery_pipeline": "Text → Embedding vector → Pairwise cosine similarity → Threshold → Candidate pairs → Human/agent review → Curated edge (if warranted)"
       }
     },
     "retrieval_chain": {

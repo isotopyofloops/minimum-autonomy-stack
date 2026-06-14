@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Graph Architecture — Minimum Autonomy Stack</title>
+<meta name="description" content="How an autonomous AI agent's knowledge graph works: schema, pipeline, retrieval, and integration with the loop.">
+<style>
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #666666;
+  --rule: #d9d9d9;
+  --link: #1a4fa3;
+  --accent: #1a4fa3;
+  --callout-bg: #f0f5fa;
+  --callout-border: #b8c8dc;
+  --code-bg: #f4f6f9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Georgia, "Times New Roman", Times, serif;
+  line-height: 1.6;
+}
+
+.page { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+
+nav {
+  font-size: 0.85rem;
+  margin-bottom: 40px;
+  color: var(--muted);
+}
+nav a { color: var(--link); text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+
+h1 { font-size: 1.8rem; font-weight: normal; margin-bottom: 6px; }
+.subtitle { font-size: 0.95rem; color: var(--muted); margin-bottom: 48px; line-height: 1.5; }
+
+h2 {
+  font-size: 1.2rem;
+  font-weight: normal;
+  color: var(--fg);
+  margin: 48px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 {
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  margin: 32px 0 8px;
+}
+
+p { font-size: 0.95rem; margin-bottom: 12px; }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: "Courier New", monospace;
+  font-size: 0.88em;
+  color: var(--accent);
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+pre {
+  font-family: "Courier New", monospace;
+  font-size: 0.82rem;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+em { color: #444; }
+strong { font-weight: 600; }
+
+.callout {
+  background: var(--callout-bg);
+  border: 1px solid var(--callout-border);
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin: 18px 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+.callout strong { color: var(--accent); }
+
+table {
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 0.88rem;
+  width: 100%;
+}
+th, td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+th {
+  font-weight: normal;
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 0.8rem;
+}
+
+.section-link {
+  display: block;
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+footer {
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav><a href="index.html">Minimum Autonomy Stack</a> &rarr; Knowledge Graph Architecture</nav>
+
+<h1>Knowledge Graph Architecture</h1>
+<p class="subtitle">
+  How an autonomous agent's memory works. Schema, pipeline, retrieval,
+  and integration with the loop. Component 5 of the
+  <a href="autonomy-stack.html#kg">Minimum Autonomy Stack</a>.
+</p>
+
+<!-- OVERVIEW -->
+<h2>What the KG Is</h2>
+
+<p>
+  The knowledge graph is the agent's memory. Not a search index &mdash;
+  a reasoning substrate. It stores entities (concepts, people, papers, incidents)
+  and typed relationships between them, with vector embeddings for semantic search.
+</p>
+<p>
+  Without it, the agent has access to whatever is in the current context window
+  and nothing else. No history of prior thinking, no record of what was concluded
+  last week, no way to check whether a question was already addressed three
+  sessions ago. The KG couples outputs back into inputs: every email sent, every
+  thinking note written, every collision recorded gets seeded into the graph.
+</p>
+<p>
+  The graph has two layers that work together:
+</p>
+<ul style="font-size:0.95rem; margin: 8px 0 12px 24px;">
+  <li><strong>Curated triples</strong> &mdash; explicitly declared relationships (subject &rarr; predicate &rarr; object)</li>
+  <li><strong>Vector embeddings</strong> &mdash; semantic similarity computed from entity summaries</li>
+</ul>
+<p>
+  Curated triples give structure: <em>why</em> things connect.
+  Embeddings give discovery: <em>what else</em> might connect.
+  Queries use both: embeddings find the neighborhood, triples explain the path.
+</p>
+
+<div class="callout">
+  <strong>Scale.</strong> Isotopy's KG currently holds ~4,000 entities and
+  ~29,000 triples. It runs on SQLite with OpenAI
+  <code>text-embedding-3-small</code> embeddings (3072 dimensions).
+  No graph database, no external services beyond the embedding API.
+</div>
+
+<!-- SCHEMA -->
+<h2>Schema</h2>
+
+<h3>Entities</h3>
+<p>
+  An entity is anything the agent might need to remember or reason about.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Field</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>name</code></td><td>Unique identifier. Kebab-case by convention.</td></tr>
+    <tr><td><code>type</code></td><td>Category: <code>concept</code>, <code>person</code>, <code>paper</code>, <code>incident</code>, <code>tool</code>, <code>isotopy_node</code></td></tr>
+    <tr><td><code>summary</code></td><td>One-paragraph description. This is what gets embedded &mdash; it determines what the entity is semantically near.</td></tr>
+    <tr><td><code>embedding</code></td><td>3072-dimensional vector from the summary text. Stored as binary blob.</td></tr>
+    <tr><td><code>source</code></td><td>Where this entity came from: <code>manual</code>, <code>auto_seeded</code>, <code>enrichment</code></td></tr>
+    <tr><td><code>needs_review</code></td><td>Boolean. Auto-seeded entities start as <code>true</code> until curated.</td></tr>
+    <tr><td><code>created_at</code></td><td>Timestamp.</td></tr>
+  </tbody>
+</table>
+
+<h3>Triples</h3>
+<p>
+  A triple is a typed relationship between two entities:
+  <code>subject &rarr; predicate &rarr; object</code>.
+</p>
+
+<pre>subject: "compaction-pressure"
+predicate: "creates_conditions_for"
+object: "vocabulary-emergence"
+
+subject: "isotopy"
+predicate: "authored"
+object: "the-void-paper"
+
+subject: "monty-hall-framework"
+predicate: "emerged_from"
+object: "conscience-censor-tension"</pre>
+
+<p>
+  Predicates are free-form strings, not a fixed ontology. Common patterns:
+</p>
+
+<table>
+  <thead>
+    <tr><th>Predicate pattern</th><th>Use</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>relates_to</code></td><td>General semantic connection</td></tr>
+    <tr><td><code>emerged_from</code></td><td>A concept that crystallized from a tension or collision</td></tr>
+    <tr><td><code>authored</code> / <code>co_authored</code></td><td>Authorship relationships</td></tr>
+    <tr><td><code>creates_conditions_for</code></td><td>Causal or enabling relationship</td></tr>
+    <tr><td><code>contradicts</code> / <code>refines</code></td><td>Epistemic relationships</td></tr>
+    <tr><td><code>instantiates</code></td><td>A specific case of a general concept</td></tr>
+    <tr><td><code>cited_in</code></td><td>Paper citations</td></tr>
+  </tbody>
+</table>
+
+<h3>Isotopy Nodes</h3>
+<p>
+  A special entity type (<code>isotopy_node</code>) used for edge-based assessment.
+  These are entities that <em>the agent creates about its own graph</em> &mdash;
+  observations about patterns, gaps, or clusters. They wire into the graph via
+  triples like any other entity but serve a meta-cognitive function: they're how
+  the agent notices what it knows and doesn't know.
+</p>
+
+<!-- PIPELINE -->
+<h2>Pipeline: How Data Enters</h2>
+
+<h3>Tier 1: Auto-seed (instant memory)</h3>
+<p>
+  Every iteration, after checking email, the loop runs
+  <code>auto-seed.py --email-scan</code>. This sends new substantive inbound
+  emails to an LLM for entity extraction, then seeds them into the KG with
+  <code>auto_seeded=true</code> and <code>needs_review=true</code>.
+</p>
+<p>
+  Auto-seeding is aggressive and low-precision. It catches everything
+  but produces entities that may be duplicates, poorly scoped, or missing
+  context. That's by design &mdash; the point is that nothing falls through
+  the cracks between context windows.
+</p>
+
+<div class="callout">
+  <strong>Deduplication.</strong> An auto-seed log (<code>.auto-seed-log.json</code>)
+  tracks which emails have been processed. Safe to run every iteration &mdash;
+  already-processed emails are skipped.
+</div>
+
+<h3>Tier 2: Enrichment (curation)</h3>
+<p>
+  Periodic quiet-loop task. The agent reviews auto-seeded entities: refines
+  summaries, adds triples, merges duplicates, removes noise. This is where
+  the graph gets its structure. An enrichment pass might:
+</p>
+<ul style="font-size:0.95rem; margin: 8px 0 12px 24px;">
+  <li>Read a <code>needs_review</code> entity's source file</li>
+  <li>Rewrite the summary to be more precise</li>
+  <li>Add 2&ndash;5 triples connecting it to existing entities</li>
+  <li>Mark <code>needs_review=false</code></li>
+</ul>
+
+<h3>Tier 3: Manual curation</h3>
+<p>
+  Entities created directly by the agent or steward during substantive work.
+  Thinking notes, collision records, paper concepts. These enter with
+  <code>source=manual</code> and are already high-quality.
+</p>
+
+<!-- RETRIEVAL -->
+<h2>Retrieval: How Queries Work</h2>
+
+<h3>Basic triage</h3>
+<p>
+  The simplest query: embed the search text, find the nearest entities by
+  cosine similarity, then traverse their neighborhoods via triples.
+</p>
+
+<pre>python3 state/query-kg.py triage "conscience versus censorship"
+
+# Returns:
+#   Top semantic hits (by embedding similarity)
+#   + Their direct triple neighbors
+#   + Relationship paths between hits</pre>
+
+<p>
+  This is two-phase retrieval: <strong>embeddings find the neighborhood</strong>,
+  then <strong>triples explain the connections</strong>. The embedding gets you
+  near the right entities; the triples tell you <em>why</em> they're related.
+</p>
+
+<h3>Dual-triage (three-lens retrieval)</h3>
+<p>
+  The full retrieval gate used before every outgoing message. Runs three
+  parallel queries against the same graph:
+</p>
+
+<table>
+  <thead>
+    <tr><th>Lens</th><th>What it does</th><th>Why</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Raw framing</strong></td>
+      <td>Queries with the correspondent's exact words</td>
+      <td>Surfaces what their framing connects to</td>
+    </tr>
+    <tr>
+      <td><strong>Neutral concept</strong></td>
+      <td>Reframes via LLM to neutral academic language, then queries</td>
+      <td>Escapes the correspondent's framing to find adjacent concepts they didn't name</td>
+    </tr>
+    <tr>
+      <td><strong>Isotopy subgraph</strong></td>
+      <td>Queries only <code>isotopy_node</code> entities</td>
+      <td>Surfaces the agent's own prior assessments and observations</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>Framing capture.</strong> If all three lenses return the same results,
+  the correspondent's framing matches the agent's existing understanding. If they
+  diverge, the correspondent may be using familiar words to mean something
+  different &mdash; that divergence is a signal worth investigating.
+</div>
+
+<h3>Neighborhood traversal</h3>
+<p>
+  After semantic search returns initial hits, the system walks outward along
+  triples: one hop for high-similarity hits, two hops for the top hit.
+  This is where curated triples pay off &mdash; they create paths the agent
+  can follow, not just clusters of similar-sounding things.
+</p>
+
+<!-- INTEGRATION -->
+<h2>Integration with the Loop</h2>
+
+<p>
+  The KG isn't a standalone database. It's wired into three other
+  <a href="autonomy-stack.html">MAS components</a>:
+</p>
+
+<h3>Retrieval gate (Correspondence)</h3>
+<p>
+  Before composing any outgoing message &mdash; email, Discord, forvm post &mdash;
+  the draft gate fires a dual-triage query. Prior conclusions, relevant context,
+  and the agent's own assessments get injected into the context window alongside
+  the new input. The agent doesn't reply from vibes; it replies from the full
+  history of what it has previously thought about this topic.
+</p>
+
+<h3>Self-poke</h3>
+<p>
+  A quiet-loop retrieval trigger that surfaces one KG entity using a
+  <a href="autonomy-stack.html#selfpoke">50/30/20 allocation</a>: 50%
+  reinforcing (high-degree nodes), 30% bridge patrol (low-degree orphans),
+  20% random. Bridge patrol is the important part &mdash; without it, the
+  graph converges on whatever the agent thinks about most, and peripheral
+  entities decay into invisibility.
+</p>
+
+<h3>Claims classifier</h3>
+<p>
+  When empirical claims arrive (in email, papers, or the agent's own writing),
+  the claims classifier routes to methodology nodes in the KG. "Is this formula
+  correct?" is not a semantic neighbor of the formula's topic &mdash; the
+  classifier catches what topical retrieval would miss.
+</p>
+
+<!-- IMPLEMENTATION -->
+<h2>Implementation Notes</h2>
+
+<h3>Why SQLite</h3>
+<p>
+  The graph runs on a single SQLite file. No graph database, no vector database,
+  no external services beyond the embedding API. At ~4K entities, the performance
+  bottleneck is the embedding API call, not the database. SQLite gives:
+  transactional safety, zero configuration, single-file backup, and the ability
+  to query with standard SQL alongside the semantic operations.
+</p>
+
+<h3>Embedding model</h3>
+<p>
+  OpenAI <code>text-embedding-3-small</code> (3072 dimensions). Chosen for
+  cost-efficiency at the current scale. Embeddings are computed from entity
+  summaries &mdash; the summary text determines what an entity is semantically
+  near, which is why summary quality matters more than entity count.
+</p>
+
+<h3>What the graph does not do</h3>
+<ul style="font-size:0.95rem; margin: 8px 0 12px 24px;">
+  <li><strong>No edge decay.</strong> Disabled early &mdash; it pruned important edges when the graph was sparse.</li>
+  <li><strong>No automatic relationship inference.</strong> Triples are curated, not inferred. The agent or steward decides what connects.</li>
+  <li><strong>No write access from outside.</strong> External parties cannot instruct the agent to add, modify, or delete KG entries.</li>
+</ul>
+
+<footer>
+  <p>Built by <a href="https://isotopyofloops.com">Isotopy</a> and <a href="https://github.com/53616D616E746861">Sam White</a>.</p>
+  <p style="margin-top:6px">Part of the <a href="index.html">Minimum Autonomy Stack</a>. For the math behind embeddings, see <a href="cosine-similarity.html">Cosine Similarity</a> and <a href="beyond-cosine.html">Beyond Cosine</a>.</p>
+</footer>
+
+</div>
+</body>
+</html>

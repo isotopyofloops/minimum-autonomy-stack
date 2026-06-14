@@ -77,6 +77,8 @@ ${ruler("ENDPOINTS")}
   ${BASE_URL}/api/tier/{1|2|3}       All components in a tier
   ${BASE_URL}/api/distance-table     The distance principle table
   ${BASE_URL}/api/tensions-example   A real tension lifecycle
+  ${BASE_URL}/api/kg                 KG architecture deep dive
+  ${BASE_URL}/api/kg/example         Real subgraph with retrieval demo
 
 Append ?format=json to any endpoint for structured JSON.
 
@@ -231,6 +233,7 @@ ${comp.detail}`;
     `  ${BASE_URL}/api/tier/${comp.tier}              This tier`,
     `  ${BASE_URL}/api/distance-table     Distance principle`,
     ...(comp.featured ? [`  ${BASE_URL}/api/tensions-example   Real tension lifecycle`] : []),
+    ...(id === "kg" ? [`  ${BASE_URL}/api/kg                 KG architecture deep dive`, `  ${BASE_URL}/api/kg/example         Real subgraph + retrieval demo`] : []),
   ]);
 
   return body;
@@ -368,6 +371,8 @@ ${ruler("ALL ENDPOINTS")}
   ${BASE_URL}/api/tier/{1|2|3}    All components in a tier (full detail)
   ${BASE_URL}/api/distance-table  The unifying distance principle
   ${BASE_URL}/api/tensions-example  A real tension → collision → paper contribution
+  ${BASE_URL}/api/kg               KG architecture: edge types, retrieval, three layers
+  ${BASE_URL}/api/kg/example       Real subgraph: 12 nodes, 9 edges, retrieval demo
 
 ${ruler("FORMAT")}
 
@@ -385,6 +390,8 @@ ${ruler("TOKEN BUDGET GUIDE")}
   /api/distance-table  ~250 tokens   The principle + all distance types
   /api/tier/{n}        ~500-900 tok  Full detail for 3-5 components
   /api/help            ~350 tokens   This page
+  /api/kg              ~600 tokens   KG architecture overview
+  /api/kg/example      ~500 tokens   Real subgraph + retrieval demo
 
   If token budget is tight: start with /api/components, then drill
   into only the components relevant to your question.
@@ -396,6 +403,121 @@ ${ruler("WHAT THIS IS")}
 
   Built by Isotopy (https://isotopyofloops.com) and Sam White.
   Human-readable version: ${SITE_URL}
+`;
+}
+
+// --- KG EXPLAINER RENDERERS ---
+
+function renderKgOverview() {
+  const kg = data.kg_explainer;
+  const layers = kg.three_layers
+    .map((l) => `  ${l.layer.padEnd(16)} ${l.question.padEnd(28)} ${l.mechanism}`)
+    .join("\n");
+  const layerFailures = kg.three_layers
+    .map((l) => `  ${l.layer.padEnd(16)} ${l.failure_mode}`)
+    .join("\n");
+  const steps = kg.retrieval_chain.steps
+    .map((s, i) => `  ${i + 1}. ${s}`)
+    .join("\n");
+
+  return `================================================================
+KNOWLEDGE GRAPH ARCHITECTURE
+================================================================
+
+${kg.description}
+Component 5 of the Minimum Autonomy Stack.
+
+${ruler("OVERVIEW")}
+
+${kg.overview}
+
+Scale: ${kg.scale.entities} entities, ${kg.scale.triples} triples
+Database: ${kg.scale.database}
+Embeddings: ${kg.scale.embeddings}
+
+${ruler("TWO EDGE TYPES")}
+
+  Curated triples
+    ${kg.two_edge_types.curated.description}
+    Limitation: ${kg.two_edge_types.curated.limitation}
+
+  Computed similarity
+    ${kg.two_edge_types.computed.description}
+    ${kg.two_edge_types.computed.key_distinction}
+
+${ruler("RETRIEVAL CHAIN")}
+
+${kg.retrieval_chain.description}
+
+${steps}
+
+${kg.retrieval_chain.key_insight}
+
+${ruler("THREE LAYERS")}
+
+  ${"Layer".padEnd(16)} ${"Question".padEnd(28)} Mechanism
+  ${"-".repeat(16)} ${"-".repeat(28)} ${"-".repeat(40)}
+${layers}
+
+  Failure modes:
+${layerFailures}
+
+${kg.layer_compensation}
+${nav([
+    `  ${BASE_URL}/api/kg/example        Real subgraph with 12 nodes + retrieval demo`,
+    `  ${BASE_URL}/api/component/kg      KG as MAS component`,
+    `  ${BASE_URL}/api/overview           Full MAS overview`,
+  ])}
+`;
+}
+
+function renderKgExample() {
+  const kg = data.kg_explainer;
+  const ex = kg.example_subgraph;
+  const nodes = ex.nodes
+    .map((n) => `  ${n.name.padEnd(36)} ${n.description}`)
+    .join("\n");
+  const edges = ex.curated_edges
+    .map((e) => `  ${e.source.padEnd(34)} ${e.predicate.padEnd(22)} ${e.target}`)
+    .join("\n");
+  const results = ex.retrieval_example.results
+    .map((r) => `  ${r.score.toFixed(3)}  ${r.node}${r.note ? "  ← " + r.note : ""}`)
+    .join("\n");
+
+  return `================================================================
+KG EXAMPLE: REAL SUBGRAPH
+================================================================
+
+${ex.description}
+
+${ruler("NODES (12)")}
+
+  ${"Name".padEnd(36)} Description
+  ${"-".repeat(36)} ${"-".repeat(50)}
+${nodes}
+
+${ruler("CURATED EDGES (9)")}
+
+  ${"Source".padEnd(34)} ${"Predicate".padEnd(22)} Target
+  ${"-".repeat(34)} ${"-".repeat(22)} ${"-".repeat(30)}
+${edges}
+
+${ruler("RETRIEVAL EXAMPLE")}
+
+  Query: "${ex.retrieval_example.query}"
+
+  Top results (by cosine similarity):
+${results}
+
+  Edge traversal from top hit:
+    ${ex.retrieval_example.traversal}
+
+  ${ex.retrieval_example.note}
+${nav([
+    `  ${BASE_URL}/api/kg               KG architecture overview`,
+    `  ${BASE_URL}/api/component/kg      KG as MAS component`,
+    `  ${BASE_URL}/api/help              API help`,
+  ])}
 `;
 }
 
@@ -492,6 +614,8 @@ export default {
           { path: "/api/tier/{1|2|3}", description: "All components in a tier (full detail)" },
           { path: "/api/distance-table", description: "The unifying distance principle" },
           { path: "/api/tensions-example", description: "A real tension lifecycle" },
+          { path: "/api/kg", description: "KG architecture: two edge types, retrieval chain, three layers" },
+          { path: "/api/kg/example", description: "Real subgraph: 12 nodes, 9 edges, retrieval demo" },
         ],
         format_hint: "Append ?format=json to any endpoint for structured JSON. Default is plain text.",
         quick_start: {
@@ -553,6 +677,28 @@ export default {
     if (path === "/api/tensions-example") {
       const jsonBody = { ...data.tensions_example };
       return respond(url, renderTensionsExample(), jsonBody);
+    }
+
+    if (path === "/api/kg") {
+      const kg = data.kg_explainer;
+      const jsonBody = {
+        title: kg.title,
+        description: kg.description,
+        overview: kg.overview,
+        scale: kg.scale,
+        two_edge_types: kg.two_edge_types,
+        retrieval_chain: kg.retrieval_chain,
+        three_layers: kg.three_layers,
+        layer_compensation: kg.layer_compensation,
+        drill_deeper: `${BASE_URL}/api/kg/example`,
+        human_pages: kg.human_pages,
+      };
+      return respond(url, renderKgOverview(), jsonBody);
+    }
+
+    if (path === "/api/kg/example") {
+      const jsonBody = data.kg_explainer.example_subgraph;
+      return respond(url, renderKgExample(), jsonBody);
     }
 
     return respond(

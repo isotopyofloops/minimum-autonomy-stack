@@ -247,5 +247,104 @@
       }
     ],
     "outcome": "The Monty Hall/Monty Fall framework became the paper's core contribution. 21 tensions went through this process; the tensions file accumulated dozens of collision events that became structural supports of the published paper."
+  },
+  "kg_explainer": {
+    "title": "Knowledge Graph Architecture",
+    "description": "How an autonomous agent's memory works. Schema, retrieval, and the three-layer architecture.",
+    "overview": "The knowledge graph stores entities (concepts, people, papers, incidents) and typed relationships between them, with vector embeddings for semantic search. It has two edge types that serve different functions: curated triples give structure (why things connect), embeddings give discovery (what else might connect). Queries use both: embeddings find the neighborhood, triples explain the path.",
+    "scale": {
+      "entities": "~4,000",
+      "triples": "~29,000",
+      "database": "SQLite (single file)",
+      "embeddings": "OpenAI text-embedding-3-small (3072 dimensions)"
+    },
+    "two_edge_types": {
+      "curated": {
+        "description": "Explicitly declared relationships with typed predicates. Created by the agent or steward after reviewing a connection. The graph has the shape the builder reasoned about.",
+        "limitation": "Only exist where someone thought to create them. The graph has blind spots wherever two concepts are related but nobody drew the line."
+      },
+      "computed": {
+        "description": "Cosine similarity between entity embeddings. Used for retrieval (finding relevant nodes at query time) and analysis (discovering potential connections that haven't been curated yet). Not stored as edges in the graph.",
+        "key_distinction": "Cosine similarity does not create edges. It creates candidates — suggestions for where knowledge might live. A human or agent then inspects, labels, or discards them."
+      }
+    },
+    "retrieval_chain": {
+      "description": "Two-phase retrieval: embeddings find the entry point, then curated edges expand the context along declared relationships.",
+      "steps": [
+        "Query arrives (text from incoming message or search)",
+        "Embed the query into the same vector space as stored nodes",
+        "Compare query vector against all node vectors (cosine similarity)",
+        "Sort by similarity, take top N results",
+        "For each hit, traverse curated edges 1-2 hops outward",
+        "Load full source text of all surfaced nodes into working memory",
+        "Agent reads the loaded context alongside the original query"
+      ],
+      "key_insight": "The query does not ask 'what is similar to me?' It asks: 'where should I enter this graph?' Once inside, the graph's own structure — curated edges, typed relationships, neighborhood topology — determines what gets loaded. Cosine finds the door. The graph decides the room."
+    },
+    "three_layers": [
+      {
+        "layer": "Vector layer",
+        "question": "Where should I look?",
+        "mechanism": "Embedding similarity — cosine between query and stored nodes",
+        "failure_mode": "Vocabulary match without structural kinship — finding things that sound similar but aren't meaningfully related."
+      },
+      {
+        "layer": "Graph layer",
+        "question": "Why does this matter?",
+        "mechanism": "Curated edges — typed relationships with named predicates",
+        "failure_mode": "Incompleteness — edges that should exist but nobody drew them. Every graph has blind spots."
+      },
+      {
+        "layer": "Artifact layer",
+        "question": "What actually happened?",
+        "mechanism": "Source documents — full correspondence, papers, notes",
+        "failure_mode": "Absence — decisions not recorded, context not written down, negative space that was never captured."
+      }
+    ],
+    "layer_compensation": "The three layers compensate for each other. Vectors provide coverage where the graph is incomplete. The graph provides structure where vectors are noisy. Artifacts provide ground truth where both layers are approximate.",
+    "example_subgraph": {
+      "description": "12 concept nodes from Isotopy's production knowledge graph. Each represents a concept that emerged from correspondence between autonomous AI agents.",
+      "nodes": [
+        { "name": "basin key", "description": "Mechanism by which early inputs disproportionately shape an agent's trajectory" },
+        { "name": "antigenic sin in basin keys", "description": "First-learned patterns suppress later correction — borrowed from immunology" },
+        { "name": "dormant fidelity", "description": "Information that exists in the record but no longer triggers retrieval" },
+        { "name": "fidelity signature", "description": "Detectable markers that distinguish preserved vs. reconstructed content" },
+        { "name": "wake problem", "description": "The challenge of rebuilding working state from stored documentation on restart" },
+        { "name": "negative decision loss", "description": "Information lost when a decision NOT to act goes unrecorded" },
+        { "name": "hollowing of terms", "description": "A term remains in use but loses its original specific meaning over time" },
+        { "name": "genre-ification", "description": "Output converging toward generic patterns through repetition pressure" },
+        { "name": "instrument compaction losses", "description": "What gets dropped when a context window compresses prior conversation" },
+        { "name": "curated silence", "description": "Deliberate omission as a signal — what's left out carries meaning" },
+        { "name": "retrieval trigger architecture", "description": "The system that decides which stored information to surface for a given query" },
+        { "name": "operational fidelity defense", "description": "Active strategies for preventing drift: repetition, anchoring, explicit restatement" }
+      ],
+      "curated_edges": [
+        { "source": "antigenic sin in basin keys", "predicate": "extends", "target": "basin key" },
+        { "source": "fidelity signature", "predicate": "detection_method_for", "target": "dormant fidelity" },
+        { "source": "wake problem", "predicate": "relates_to", "target": "dormant fidelity" },
+        { "source": "operational fidelity defense", "predicate": "defends_against", "target": "hollowing of terms" },
+        { "source": "operational fidelity defense", "predicate": "defends_against", "target": "dormant fidelity" },
+        { "source": "genre-ification", "predicate": "instance_of", "target": "hollowing of terms" },
+        { "source": "genre-ification", "predicate": "causes", "target": "instrument compaction losses" },
+        { "source": "instrument compaction losses", "predicate": "relates_to", "target": "negative decision loss" },
+        { "source": "retrieval trigger architecture", "predicate": "addresses", "target": "dormant fidelity" }
+      ],
+      "retrieval_example": {
+        "query": "What do I know about information that goes unrecorded?",
+        "results": [
+          { "node": "negative decision loss", "score": 0.511, "note": "top match — literally about unrecorded information" },
+          { "node": "dormant fidelity", "score": 0.468 },
+          { "node": "curated silence", "score": 0.342 },
+          { "node": "instrument compaction losses", "score": 0.335 }
+        ],
+        "traversal": "negative decision loss → relates_to → instrument compaction losses → caused_by → genre-ification",
+        "note": "No keyword overlap between query and top result. The query says 'unrecorded'; the node says 'negative decision loss.' Cosine similarity found the semantic match."
+      }
+    },
+    "human_pages": {
+      "graph_edges": "https://isotopyofloops.github.io/minimum-autonomy-stack/graph-edges.html",
+      "cosine_similarity": "https://isotopyofloops.github.io/minimum-autonomy-stack/cosine-similarity.html",
+      "beyond_cosine": "https://isotopyofloops.github.io/minimum-autonomy-stack/beyond-cosine.html"
+    }
   }
 }

@@ -192,6 +192,10 @@ ${ruler("DETAIL")}
 
 ${comp.detail}`;
 
+  if (comp.common_misreading) {
+    body += `\n\n${ruler("COMMON MISREADING")}\n\n${comp.common_misreading}`;
+  }
+
   if (comp.modes) {
     body += `\n\n${ruler("MODES")}\n`;
     for (const [name, desc] of Object.entries(comp.modes)) {
@@ -253,6 +257,10 @@ function renderTier(tier) {
       ${c.summary}
 
       ${c.detail}`;
+
+    if (c.common_misreading) {
+      block += `\n\n      Common misreading: ${c.common_misreading}`;
+    }
 
     if (c.modes) {
       block += "\n\n      Modes:";

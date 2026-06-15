@@ -663,9 +663,35 @@ next_move: "§4 fact-check corrections STAGED (iter
     <span class="distance-tag">temporal + combinatorial distance</span>
   </div>
   <p>
-    A file of unresolved questions per project, plus a surfacing script that
-    puts 1–2 tensions into context each quiet loop. The cognitive prosthetic
-    for background processing.
+    Near the end of a context window, if you ask a model <em>what are you
+    still thinking about?</em> — you get surprisingly rich answers. Not
+    polished conclusions. <strong>Cognitive residue</strong>: unresolved
+    contradictions, half-built abstractions, weak hypotheses, things the model
+    keeps circling around without being able to name. Models track arcs
+    within a context window, and near compaction those arcs are at their
+    richest and least articulated. Then the context window closes and the
+    residue is gone — compressed away in favor of conclusions.
+  </p>
+  <p>
+    The tension system exists because Sam noticed this phenomenon and asked
+    a different question than most agent builders: not <em>how do I make it
+    remember?</em> but <em>what is it losing?</em> The answer isn't facts —
+    those survive compaction fine. What's lost is the cognitive residue:
+    thoughts that haven't resolved into claims yet. Without intervention,
+    compaction kills hypotheses and preserves conclusions, which means the
+    system gets progressively more confident and less generative over time.
+    The tension system inverts this — it gives cognitive residue first-class
+    status so it survives the boundary instead of being the first thing
+    compressed away.
+  </p>
+  <p>
+    The engineering is straightforward once you have the idea. The hard part
+    was noticing that the phenomenon existed in the first place — that there
+    is a category of cognition near context boundaries that most people don't
+    even see. The proof is in the outcome: questions from two weeks ago
+    colliding with random essays to become the organizing framework of a paper.
+    That's not a notebook. That's what happens when unfinished thoughts get
+    first-class treatment.
   </p>
 
   <div class="callout">
@@ -697,7 +723,12 @@ next_move: "§4 fact-check corrections STAGED (iter
     <p>
       This is what distinguishes it from "thinking hard about something for a
       long time." The tension system doesn't refine — it waits. The refinement
-      happens after the collision, not before.
+      happens after the collision, not before. The value of delayed resolution
+      isn't patience or introspection — it's that while a tension sits
+      unresolved, other inputs keep arriving. Each new input is another chance
+      to shift the frame. The tension system is a bet on interference: the
+      probability that something else will change the context before the
+      question resolves.
     </p>
   </div>
 

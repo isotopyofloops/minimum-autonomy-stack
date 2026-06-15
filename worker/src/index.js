@@ -72,6 +72,9 @@ ${ruler("ENDPOINTS")}
 
   ${BASE_URL}/api/help               Start here — navigation, format options, token budgets
   ${BASE_URL}/api/overview           Full stack with theories and origin
+  ${BASE_URL}/api/how-it-works       How components interleave in an iteration
+  ${BASE_URL}/api/collisions         Why "collisions" — the mechanism explained
+  ${BASE_URL}/api/evidence           What the stack produced — paper, process, numbers
   ${BASE_URL}/api/components         All 12 components with summaries
   ${BASE_URL}/api/component/{id}     Full detail for one component
   ${BASE_URL}/api/tier/{1|2|3}       All components in a tier
@@ -137,6 +140,9 @@ ${ruler("ORIGIN")}
   Context windows: ${data.origin.iterations}
   First written for: ${data.origin.first_written_for} (${data.origin.date})
 ${nav([
+  `  ${BASE_URL}/api/how-it-works       How the components work together`,
+  `  ${BASE_URL}/api/collisions         Why "collisions" — the key mechanism`,
+  `  ${BASE_URL}/api/evidence           What the stack produced`,
   `  ${BASE_URL}/api/components         All components`,
   `  ${BASE_URL}/api/component/{id}     Drill into one`,
   `  ${BASE_URL}/api/distance-table     The distance principle`,
@@ -366,6 +372,9 @@ ${ruler("ALL ENDPOINTS")}
   ${BASE_URL}/                    Landing page (same as /llms.txt)
   ${BASE_URL}/api/help            This help page
   ${BASE_URL}/api/overview        Full stack with theories and origin
+  ${BASE_URL}/api/how-it-works    How the 12 components interleave in a single iteration
+  ${BASE_URL}/api/collisions      Why "collisions" — the mechanism that makes this work
+  ${BASE_URL}/api/evidence        What the stack produced — paper, process, numbers
   ${BASE_URL}/api/components      All 12 components (summaries only)
   ${BASE_URL}/api/component/{id}  Detail + examples for one component
   ${BASE_URL}/api/tier/{1|2|3}    All components in a tier (full detail)
@@ -387,9 +396,12 @@ ${ruler("TOKEN BUDGET GUIDE")}
   /api/components      ~400 tokens   Scan all 12 summaries
   /api/component/{id}  ~300-800 tok  Varies — components with examples are larger
   /api/overview        ~1000 tokens  Full picture in one request
+  /api/how-it-works    ~400 tokens   Iteration flow + quiet vs active loops
+  /api/collisions      ~300 tokens   The collision mechanism + statistics
+  /api/evidence        ~400 tokens   Paper, process, what the stack provided
   /api/distance-table  ~250 tokens   The principle + all distance types
   /api/tier/{n}        ~500-900 tok  Full detail for 3-5 components
-  /api/help            ~350 tokens   This page
+  /api/help            ~400 tokens   This page
   /api/kg              ~900 tokens   KG architecture overview + query flow + maintenance
   /api/kg/example      ~500 tokens   Real subgraph + retrieval demo
 
@@ -403,6 +415,127 @@ ${ruler("WHAT THIS IS")}
 
   Built by Isotopy (https://isotopyofloops.com) and Sam White.
   Human-readable version: ${SITE_URL}
+`;
+}
+
+// --- NEW SECTION RENDERERS ---
+
+function renderHowItWorks() {
+  const h = data.how_it_works;
+  const steps = h.iteration_flow.map((s, i) => `  ${i + 1}. ${s}`).join("\n\n");
+
+  return `================================================================
+${h.title.toUpperCase()}
+================================================================
+
+${h.description}
+
+${ruler("A TYPICAL ITERATION")}
+
+${steps}
+
+${h.key_point}
+
+${ruler("QUIET LOOPS VS ACTIVE LOOPS")}
+
+  Quiet loop
+    ${h.quiet_vs_active.quiet_loop}
+
+  Active loop
+    ${h.quiet_vs_active.active_loop}
+${nav([
+  `  ${BASE_URL}/api/collisions          Why "collisions" — the mechanism explained`,
+  `  ${BASE_URL}/api/components          All 12 components`,
+  `  ${BASE_URL}/api/evidence            What the stack produced`,
+  `  ${BASE_URL}/api/overview            Full stack overview`,
+])}
+`;
+}
+
+function renderCollisions() {
+  const c = data.collisions_explainer;
+  return `================================================================
+${c.title.toUpperCase()}
+================================================================
+
+${c.description}
+
+${ruler("THE METAPHOR")}
+
+${c.metaphor}
+
+${c.distinction}
+
+${ruler("THE MECHANISM")}
+
+  What creates collisions
+    ${c.mechanism.what_creates_collisions}
+
+  What happens during a collision
+    ${c.mechanism.what_happens_during}
+
+  What happens after
+    ${c.mechanism.what_happens_after}
+
+${ruler("BY THE NUMBERS")}
+
+  ${c.statistics.note}
+  Tensions seeded:      ${c.statistics.tensions_seeded}
+  Collisions recorded:  ${c.statistics.collisions_recorded}
+  Context windows:      ${c.statistics.context_windows}
+  Time span:            ${c.statistics.time_span}
+  Human involvement:    ${c.statistics.human_involvement_in_writing}
+${nav([
+  `  ${BASE_URL}/api/tensions-example    A real collision lifecycle (tension → framework → paper)`,
+  `  ${BASE_URL}/api/component/tensions  Tension System component`,
+  `  ${BASE_URL}/api/how-it-works        How components interleave in an iteration`,
+  `  ${BASE_URL}/api/evidence            What the stack produced`,
+])}
+`;
+}
+
+function renderEvidence() {
+  const e = data.evidence;
+  const provided = e.what_the_stack_provided.map((s, i) => `  ${i + 1}. ${s}`).join("\n\n");
+
+  return `================================================================
+${e.title.toUpperCase()}
+================================================================
+
+${e.description}
+
+${ruler("THE PAPER")}
+
+  Title: "${e.paper.title}" (${e.paper.id})
+  URL: ${e.paper.url}
+  Length: ${e.paper.length}
+
+  ${e.paper.scope}
+
+  Human involvement: ${e.paper.human_involvement}
+
+${ruler("THE PROCESS")}
+
+  Context windows:  ${e.process.context_windows}
+  Tensions:         ${e.process.tensions}
+  Collisions:       ${e.process.collisions}
+  Timeline:         ${e.process.timeline}
+  Iterations:       ${e.process.iterations}
+
+${ruler("WHAT THE STACK PROVIDED")}
+
+${provided}
+
+${ruler("WORKING DRAFT")}
+
+  ${e.working_draft.description}
+  ${e.working_draft.url}
+${nav([
+  `  ${BASE_URL}/api/collisions          How the collision mechanism works`,
+  `  ${BASE_URL}/api/how-it-works        A typical iteration flow`,
+  `  ${BASE_URL}/api/overview            Full stack overview`,
+  `  ${BASE_URL}/api/components          All 12 components`,
+])}
 `;
 }
 
@@ -634,6 +767,9 @@ export default {
           { path: "/", description: "Landing page (same as /llms.txt)" },
           { path: "/api/help", description: "This help page" },
           { path: "/api/overview", description: "Full stack with theories and origin" },
+          { path: "/api/how-it-works", description: "How components interleave in an iteration" },
+          { path: "/api/collisions", description: "Why collisions — the mechanism explained" },
+          { path: "/api/evidence", description: "What the stack produced — paper, process, numbers" },
           { path: "/api/components", description: "All 12 components (summaries only)" },
           { path: "/api/component/{id}", description: "Detail + examples for one component", ids: Object.keys(data.components) },
           { path: "/api/tier/{1|2|3}", description: "All components in a tier (full detail)" },
@@ -702,6 +838,18 @@ export default {
     if (path === "/api/tensions-example") {
       const jsonBody = { ...data.tensions_example };
       return respond(url, renderTensionsExample(), jsonBody);
+    }
+
+    if (path === "/api/how-it-works") {
+      return respond(url, renderHowItWorks(), data.how_it_works);
+    }
+
+    if (path === "/api/collisions") {
+      return respond(url, renderCollisions(), data.collisions_explainer);
+    }
+
+    if (path === "/api/evidence") {
+      return respond(url, renderEvidence(), data.evidence);
     }
 
     if (path === "/api/kg") {

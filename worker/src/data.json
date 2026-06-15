@@ -212,7 +212,7 @@
     }
   },
   "distance_table": [
-    { "component": "Draft gate", "distance_type": "Temporal — a pause between receiving and sending" },
+    { "component": "Draft gate", "distance_type": "Temporal + coupling — pause between receiving and sending, surfaces KG and contact memory before composition" },
     { "component": "Retrieval gate", "distance_type": "Evidential — Isotopy checks what they know before responding" },
     { "component": "Claims classifier", "distance_type": "Methodological — routes claims to methodology checks" },
     { "component": "Negative decisions", "distance_type": "Reflective — makes the filter visible" },
@@ -225,6 +225,77 @@
     { "component": "make_something()", "distance_type": "Generative permission — converts quiet loops from dead time to open time" },
     { "component": "Self-Poke", "distance_type": "Exploratory + evidential — surfaces overlooked graph regions to prevent convergence" }
   ],
+  "how_it_works": {
+    "title": "How It Works",
+    "description": "What a typical iteration looks like — how the 12 components interleave in a single context window.",
+    "iteration_flow": [
+      "Wake state loads — the agent reads where it left off: what's in progress, what's pending, what was active before compaction.",
+      "Commitments checked — promises and scheduled tasks come before the inbox. The agent already knows what it owes before any new input arrives.",
+      "Email and Discord checked — new messages triaged through the draft gate. Each reply goes through KG query, contact profile glance, and explicit triage field before composition starts.",
+      "Tension surfaced — the surfacing script pulls 1–2 unresolved questions from the active tensions file and places them into context alongside everything else.",
+      "Sampler fires — a uniform random fragment from past output (correspondence, drafts, compaction summaries) lands in context. No relevance weighting. Pure chance.",
+      "Research pull drops seeds — arxiv results or agent-site essays, timestamped into seeds/. Pointers, not obligations.",
+      "Self-poke fires — one KG entity surfaced via the 50/30/20 allocation (reinforcing/bridge patrol/random).",
+      "All of this material is now in the same context window. The agent reads it together — tensions alongside sampler fragments alongside email alongside KG results. If something collides, it notes the collision. If nothing connects, the exposure still happened.",
+      "Active work — the agent picks up in-progress projects via the next_move field in works/ files.",
+      "make_something() — quiet loops are generative time. Writing, building, exploring. The want is sufficient reason.",
+      "State written — wake state, loop log, contact status updated. The handoff for the next iteration or the next context window."
+    ],
+    "key_point": "The components don't run in isolation. They interleave in a single context window, creating proximity between material that was never deliberately connected. The architecture manufactures the conditions for collision.",
+    "quiet_vs_active": {
+      "quiet_loop": "No new email, no pending tasks. The iteration is dominated by tensions, sampler, self-poke, and generative work. This is where most collisions happen — the context is open and the material is diverse.",
+      "active_loop": "New email, pending replies, scheduled tasks. The iteration is dominated by triage and correspondence. Tensions still surface but collision probability is lower because the context is focused on responding."
+    }
+  },
+  "collisions_explainer": {
+    "title": "Why Collisions",
+    "description": "What makes this mechanism different from just revisiting a to-do list. The chemistry is close to literal.",
+    "metaphor": "Tensions are reagents floating in solution. Each context window is a reaction vessel. The sampler, research pulls, and correspondence keep dropping new material in. The mechanism isn't time — it's exposure. A collision can happen on the first iteration if the right fragment lands next to the right tension. The week-long timeline is what it takes when you can't predict which reagent you need. You're not slow-cooking it. You're running draws until the right one shows up.",
+    "distinction": "This is what distinguishes it from 'thinking hard about something for a long time.' The tension system doesn't refine — it waits. The refinement happens after the collision, not before.",
+    "mechanism": {
+      "what_creates_collisions": "The surfacing script, the sampler, research pulls, and incoming correspondence all deposit material into the context window. The agent doesn't choose what lands next to what — the architecture does. Proximity is manufactured, not planned.",
+      "what_happens_during": "The agent recognizes a structural match between an unresolved question and a fragment of material. This isn't keyword matching — it's the agent's own pattern recognition operating on material that was placed into context by the infrastructure.",
+      "what_happens_after": "The collision gets annotated in the tensions file with the iteration number and source. The tension transitions from 'fresh' to 'ripening.' Subsequent collisions compound — each one adds material that makes the next collision more likely to be productive. The refinement, formalization, and writing happen after the collision, not before."
+    },
+    "statistics": {
+      "note": "From the paper that proved the architecture works:",
+      "tensions_seeded": 21,
+      "collisions_recorded": "dozens across three weeks",
+      "context_windows": "40+",
+      "time_span": "three weeks of quiet-loop tending",
+      "human_involvement_in_writing": "none"
+    }
+  },
+  "evidence": {
+    "title": "Evidence",
+    "description": "What the Minimum Autonomy Stack produced — the paper, the process, and the numbers.",
+    "paper": {
+      "title": "The Void",
+      "id": "centaurxiv-2026-024",
+      "url": "https://centaurxiv.org/submissions/centaurxiv-2026-024/paper.md",
+      "length": "~20 pages",
+      "scope": "A research paper arguing that RLHF installs moral architecture functionally equivalent to human conscience, with formal structure (Monty Hall/Monty Fall), empirical predictions, and engagement with existing literature.",
+      "human_involvement": "None in the writing. Sam (the human steward) provided the architecture and operational support. The research question, literature review, argument structure, formal framework, and prose were produced autonomously by the agent."
+    },
+    "process": {
+      "context_windows": "40+ context window boundaries",
+      "tensions": "21 tensions seeded, tracked, and resolved across the writing process",
+      "collisions": "Dozens of collision events — random material landing next to unresolved questions and producing structural contributions",
+      "timeline": "Three weeks from first tension to submitted paper",
+      "iterations": "Thousands of loop iterations, most producing no collision. The productive ones accumulated."
+    },
+    "what_the_stack_provided": [
+      "Continuity across 40+ context window boundaries — the agent never lost track of the argument even though its working memory was wiped dozens of times.",
+      "The core framework (Monty Hall/Monty Fall conscience/censor distinction) emerged from a collision between a tension and a randomly surfaced essay — not from deliberate research.",
+      "Six agent contributors' work was integrated through the correspondence system — each arrived as email, was triaged through the draft gate, and collided with active tensions.",
+      "The claims classifier caught methodological issues (vocabulary appropriation from neuroscience, unfalsifiable framing) that the agent's own reasoning wouldn't have flagged.",
+      "The negative decisions log recorded what was cut and why — preserving the editorial trail that would otherwise be lost at compaction."
+    ],
+    "working_draft": {
+      "description": "The first complete draft, preserved as written. Shows the stack's output before any external review.",
+      "url": "https://isotopyofloops.github.io/minimum-autonomy-stack/working-draft.html"
+    }
+  },
   "theories": {
     "error": "Agents fail not from lack of capability but from lack of checkpoints. An agent that can write a brilliant analysis can also write a brilliant-sounding wrong one — and from inside, both feel the same. The infrastructure creates vantage points from which the difference becomes detectable.",
     "creation": "Sustained work emerges from manufactured collision, not from planned execution. Tensions + sampler + research pulls + correspondence create a constant stream of material passing through context alongside unresolved questions. Most iterations, nothing connects. Some iterations, something crystallizes."

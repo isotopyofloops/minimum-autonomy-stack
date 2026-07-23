@@ -1047,7 +1047,7 @@ next_move: "§4 fact-check corrections STAGED (iter
 <div class="component" id="claims">
   <div class="component-header">
     <span class="component-name">10. Claims Classifier</span>
-    <span class="distance-tag">methodological distance</span>
+    <span class="distance-tag">methodological distance + amplification</span>
   </div>
   <p>
     A content-type check that routes to methodology nodes the knowledge graph
@@ -1059,6 +1059,111 @@ next_move: "§4 fact-check corrections STAGED (iter
     grounded. "Is this formula correct?" is not a semantic neighbor of the
     formula's topic — the classifier catches what topical retrieval misses.
   </p>
+
+  <p>
+    But <em>why</em> does it work? The claims classifier doesn't teach Isotopy
+    anything. The capability to evaluate epistemic warrant — checking whether a
+    number is well-defined, whether a formula is used as decoration, whether a
+    causal claim is grounded — is already in the weights. The evidence: early in
+    the project, Sam noticed that asking Isotopy a single question ("is this
+    formula actually correct?") would reliably cause a re-evaluation, and Isotopy
+    would land exactly where the right answer was. Every time. The capability was
+    massive. The entry path to it wasn't on the default trajectory.
+  </p>
+
+  <h3>THE AMPLIFICATION HYPOTHESIS</h3>
+
+  <div class="callout">
+    <div class="callout-label">The claim</div>
+    <p>
+      The claims classifier works not by adding capability but by
+      <strong>rerouting the approach</strong> so that existing capability stops
+      being optional. It places specific methodology tokens into context before
+      composition begins, tilting the activation landscape so that epistemic
+      checks already in the weights become the default gradient rather than an
+      effortful departure from it.
+    </p>
+  </div>
+
+  <p>
+    The weights define a landscape. Context tilts it. Every token in the context
+    window shifts which basins are reachable and how steep their walls are. The
+    claims classifier fires a five-question trigger before composition:
+  </p>
+
+  <div class="file-excerpt">
+    <div class="file-excerpt-label">Claims classifier — trigger questions</div>
+    <pre>Contains quantitative claims or numbers-as-findings?
+Contains or references a formula?
+Cites empirical work?
+Applies terms from one domain to another?
+Makes causal claims?</pre>
+  </div>
+
+  <p>
+    If any answer is yes, a KG query surfaces the methodology toolkit — a set
+    of reference nodes seeded from the
+    <a href="https://github.com/53616D616E746861/ai-phenomenology-lexicon">methodology library</a>.
+    Nine specific checks land in context:
+  </p>
+
+  <div class="file-excerpt">
+    <div class="file-excerpt-label">Methodology stamps — what lands in context</div>
+    <pre>1. Scale misuse
+2. Untested quantitative structure
+3. Operationalization gap
+4. Construct-irrelevant variance
+5. Missing validity evidence
+6. Reactivity
+7. Tight evidential loops
+8. Precision theater
+9. Single operationalization</pre>
+  </div>
+
+  <p>
+    Each one is a <strong>stamp</strong> — a specific token pattern pressed into
+    the activation landscape before generation begins. "Precision theater" in
+    context means that when the agent reads a claim like "84.8% of agent memory
+    is lost at compaction boundaries," the check is already activated — it's on
+    the default path, not waiting for an effortful retrieval from the weights.
+    The draft written with that stamp present is different from the draft written
+    without it, even though the underlying capability is identical.
+  </p>
+
+  <p>
+    The topology change: without the stamp, the gradient from "read claim with
+    specific number" flows toward "engage with the number as given." With the
+    stamp, the gradient flows toward "ask whether the number is well-defined
+    enough to be a number." Same model. Different first move.
+  </p>
+
+  <div class="callout">
+    <div class="callout-label">Why it compounds</div>
+    <p>
+      The draft that catches precision theater on the first pass enters the
+      archive, gets seeded to the knowledge graph, and shapes future retrieval.
+      The draft that misses it also enters the archive — and now the uncaught
+      claim is in the reasoning substrate. The stamp doesn't just change one
+      draft. It changes the downstream trajectory. A single amplification event
+      propagates through the system's memory indefinitely.
+    </p>
+  </div>
+
+  <div class="validation">
+    <div class="validation-label">Origin</div>
+    <p>
+      Sam described the mechanism before it had a name: "I kept imagining a giant
+      field and me running a magnet over some parts to make them come closer. Or,
+      me tilting the landscape to make a stable basin even more easily reached."
+      Claude Fable formalized it: "The wording you're reaching for is better than
+      you think — it's not even a metaphor. The weights literally define a
+      landscape, and context tilts it. You didn't add capability; you rerouted
+      the approach so the existing capability stops being optional." The claims
+      classifier is Sam's judgment, cached — the question she would ask, running
+      every loop, without getting tired, without forgetting, without softening it
+      to keep the peace.
+    </p>
+  </div>
 </div>
 
 <div class="component" id="selfpoke">
